@@ -1,0 +1,12 @@
+{
+  "id": "write_decision",
+  "type": "workflow",
+  "description": "Appends a structured decision-log entry. Every agent conclusion is recorded here with its evidence_event_ids (the world-events that justify it), so the UI can link every conclusion back to live evidence. Idempotent on decision_id. Input: doc_json \u2014 a JSON string of the full decision object (keys: decision_id, run_id, ts, agent, kind, summary, evidence_event_ids[], and optionally detail, simulated, related{}). A server-side ingest pipeline parses it into a typed document.",
+  "tags": [
+    "faultline",
+    "decision-log"
+  ],
+  "configuration": {
+    "workflow_id": "faultline-write-decision-3"
+  }
+}

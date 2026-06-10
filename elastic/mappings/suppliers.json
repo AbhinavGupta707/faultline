@@ -13,7 +13,7 @@
       "lead_time_days": { "type": "integer" },
       "expedited_lead_time_days": { "type": "integer" },
       "capacity": { "type": "keyword" },
-      "profile_semantic": { "type": "semantic_text" }
+      "profile_semantic": { "type": "semantic_text", "inference_id": ".elser-2-elasticsearch" }
     }
   }
 }

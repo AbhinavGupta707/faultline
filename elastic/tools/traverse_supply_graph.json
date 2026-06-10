@@ -1,0 +1,12 @@
+{
+  "id": "traverse_supply_graph",
+  "type": "esql",
+  "description": "Walks the precomputed supplier-graph downstream from one or more affected suppliers to the finished products they feed, returning every impacted path. Each path gives the ordered supplier_chain (root affected supplier first, as JSON), the component flowing through it, the finished product, hop count, and any routing chokepoint (route_via, e.g. a port). Used by the Tracer after match_event_to_suppliers. Input: supplier_ids (array of affected supplier ids).",
+  "tags": ["faultline", "tracer"],
+  "configuration": {
+    "query": "FROM supplier-graph-paths\n| WHERE MV_CONTAINS(?supplier_ids, root_supplier_id)\n| KEEP path_id, root_supplier_id, supplier_chain_json, component_id, component_name, product_id, product_name, hops, route_via\n| SORT root_supplier_id, product_id, component_id\n| LIMIT 1000",
+    "params": {
+      "supplier_ids": { "type": "array", "description": "Affected supplier ids to traverse downstream from, e.g. ['sup-vadodara-chem']." }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "id": "lookup_exposure",
+  "type": "esql",
+  "description": "Looks up current inventory exposure for finished products: days_of_cover per (product, component) pair, on-hand units, daily consumption, and the product's monthly revenue. Used by the Assessor and Verifier to quantify how long until a disrupted component stocks out and how much revenue is at risk. Input: product_ids (array of finished-product ids). Returns one row per affected (product, component) pair.",
+  "tags": ["faultline", "assessor", "verifier"],
+  "configuration": {
+    "query": "FROM inventory\n| WHERE MV_CONTAINS(?product_ids, product_id)\n| KEEP product_id, product_name, component_id, days_of_cover, on_hand_units, daily_consumption_units, unit, monthly_revenue_usd\n| SORT product_id, component_id\n| LIMIT 1000",
+    "params": {
+      "product_ids": { "type": "array", "description": "Finished-product ids to look up exposure for, e.g. ['prd-granola-bar','prd-sparkling-botanical']." }
+    }
+  }
+}

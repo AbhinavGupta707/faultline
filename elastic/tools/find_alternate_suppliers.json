@@ -1,0 +1,13 @@
+{
+  "id": "find_alternate_suppliers",
+  "type": "esql",
+  "description": "Finds qualified alternate suppliers that can supply a given component as a backup source, ranked by a fit score combining capacity and lead time (faster, higher-capacity alternates first). Only suppliers pre-qualified as alternates for the component (alternate_for) are returned. Used by the Resourcer to discover re-sourcing options. Inputs: component_id (the disrupted component), size (max alternates).",
+  "tags": ["faultline", "resourcer"],
+  "configuration": {
+    "query": "FROM suppliers\n| WHERE alternate_for == ?component_id\n| EVAL cap_w = CASE(capacity == \"high\", 1.0, capacity == \"medium\", 0.7, 0.4), score = cap_w * (1.0 - (lead_time_days / 45.0)), lat = ST_Y(location), lon = ST_X(location)\n| KEEP supplier_id, name, tier, lat, lon, country, region, components, alternate_for, certifications, lead_time_days, expedited_lead_time_days, capacity, profile_semantic, score\n| SORT score DESC, lead_time_days ASC\n| LIMIT ?size",
+    "params": {
+      "component_id": { "type": "string", "description": "The disrupted component id to find alternates for, e.g. 'cmp-emulsifier'." },
+      "size": { "type": "integer", "description": "Maximum number of alternate suppliers to return (e.g. 5)." }
+    }
+  }
+}

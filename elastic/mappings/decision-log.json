@@ -1,4 +1,7 @@
 {
+  "settings": {
+    "default_pipeline": "decision-parse"
+  },
   "mappings": {
     "properties": {
       "decision_id": { "type": "keyword" },
