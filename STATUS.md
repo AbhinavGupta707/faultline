@@ -7,6 +7,8 @@
 
 2026-06-10 · B · **REAL GEMINI CALLS LIVE** (ADC/Vertex, ELASTIC still mock): full golden run with LLM triage/assessment/negotiation in ~13–18s, all messages contract-valid, narration shape == ws_replay.jsonl (call block 4–6 turns). Watcher prompt now carries the Northwind supplier footprint → triage names the sole-source plant + correct supplier_hints; assessor refines est_disruption (e.g. 25d flood recession) with dollars recomputed from the refined estimate (math can't drift); negotiator script self-identifies as AI + contingent-on-PO. Smoke harness: `GEMINI_MODE=auto python3 -m agents.tests.live_smoke`. Deterministic suite (GEMINI_MODE=off) untouched: 37/37.
 
+2026-06-10 · B · **S1 probe vs real cluster:** `python3 -m agents.tools.elastic_mcp` authenticates and lists 22 tools at the Agent Builder MCP endpoint (my streamable-HTTP client verified end-to-end against prod) — but they're all built-ins (`platform_core_*`/`platform_streams_*`); **A's six contract tools not published yet → S1 still blocked on A.** The moment they appear under their bare contract names, the flip is `ELASTIC_MODE=live` + re-run the probe + golden test.
+
 ## Notes for other sessions (B)
 
 - **For F (env.example fix needed):** Vertex model IDs verified 2026-06-10 against project `faultline-…`: `gemini-3.5-flash` ✓ exact, but **`gemini-3.1-pro` 404s — the published id is `gemini-3.1-pro-preview`**, and **all Gemini 3.x ids exist only in location `global`** (us-central1 serves only ≤2.5). Please update env.example: `GEMINI_MODEL_PRO=gemini-3.1-pro-preview`; my runtime reads `GEMINI_LOCATION` (default `global`) for Gemini calls, `VERTEX_LOCATION` untouched for other infra. I fixed my local .env only. (Same naming-drift class as E's live-model finding.)
