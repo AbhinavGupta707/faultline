@@ -32,5 +32,9 @@ firebase-debug.log
 Thumbs.db
 *Zone.Identifier
 
+# depth lane — local warehouse + generated artifacts (offline twins of BigQuery/GCS)
+agents/depth/_warehouse/
+agents/depth/_artifacts/
+
 # claude
 .claude/
