@@ -15,7 +15,9 @@ cd "$REPO_ROOT"
 
 # gcloud may be a user-local install (not on non-interactive PATH)
 export PATH="$HOME/google-cloud-sdk/bin:$PATH"
-command -v npm >/dev/null 2>&1 || { export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"; }
+# ALWAYS prefer nvm's node: WSL interop exposes Windows npm on PATH, which
+# fails on UNC paths — `command -v npm` alone is not a safe check here.
+export NVM_DIR="$HOME/.nvm"; [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
 [ -f .env ] && { set -a; . ./.env; set +a; }
 
