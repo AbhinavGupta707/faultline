@@ -45,6 +45,22 @@ def iso_now() -> str:
     return datetime.now(tz=timezone.utc).isoformat().replace("+00:00", "Z")
 
 
+def iso_to_utc(s: str | None) -> str | None:
+    """Normalize an offset-aware ISO string (e.g. '...-05:00') to UTC 'Z'.
+
+    Returns None on anything unparseable. Naive timestamps are assumed UTC.
+    """
+    if not s:
+        return None
+    try:
+        dt = datetime.fromisoformat(s.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
 # Coarse continental buckets keyed off lat/lon. First box that contains the point
 # wins, so order encodes precedence (the Americas before the rest, sub-regions of
 # Asia before the broad fallbacks). Vocabulary matches the golden fixtures
