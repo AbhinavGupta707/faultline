@@ -75,7 +75,7 @@ join_secrets() { # join_secrets NAME1 NAME2... → "NAME1=NAME1:latest,..." for 
 ensure_ar
 
 if want feed_ingest; then
-  build_image feed_ingest services/feed_ingest/Dockerfile
+  build_image faultline-feed-ingest services/feed_ingest/Dockerfile
   SEC="$(join_secrets ELASTIC_API_KEY MAPS_API_KEY)"
   # private: only Cloud Scheduler (OIDC as faultline-svc) may invoke /ingest
   deploy_run faultline-feed-ingest "$SA_SVC" \
@@ -87,14 +87,14 @@ if want feed_ingest; then
 fi
 
 if want po_generator; then
-  build_image po_generator services/po_generator/Dockerfile
+  build_image faultline-po-generator services/po_generator/Dockerfile
   deploy_run faultline-po-generator "$SA_SVC" \
     --allow-unauthenticated --memory=512Mi \
     --set-env-vars="GCS_BUCKET=${BUCKET}"
 fi
 
 if want voice_gateway; then
-  build_image voice_gateway services/voice_gateway/Dockerfile
+  build_image faultline-voice-gateway services/voice_gateway/Dockerfile
   deploy_run faultline-voice-gateway "$SA_AGENT" \
     --allow-unauthenticated --timeout=3600 --session-affinity --memory=1Gi \
     --set-env-vars="GCP_PROJECT=${PROJECT},VERTEX_LOCATION=${REGION},VOICE_MODE=${VOICE_MODE:-mock},GEMINI_LIVE_MODEL=${GEMINI_LIVE_MODEL:-gemini-live-2.5-flash-native-audio},GEMINI_LIVE_MODEL_FALLBACK=${GEMINI_LIVE_MODEL_FALLBACK:-gemini-live-2.5-flash-native-audio},GEMINI_MODEL_FLASH=${GEMINI_MODEL_FLASH:-gemini-3.5-flash}"
@@ -102,7 +102,7 @@ fi
 
 # agents deploys last of the Run services so PO_GENERATOR_URL resolves on a cold project
 if want agents; then
-  build_image agents agents/Dockerfile
+  build_image faultline-agents agents/Dockerfile
   PO_URL="$(run_url faultline-po-generator)"
   SEC="$(join_secrets ELASTIC_API_KEY KIBANA_URL)"
   deploy_run faultline-agents "$SA_AGENT" \
