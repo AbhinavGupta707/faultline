@@ -10,6 +10,7 @@ evidence_event_ids, then mirrored as ws decision.logged.
 """
 from __future__ import annotations
 
+import functools
 import inspect
 import logging
 from typing import Optional
@@ -253,39 +254,68 @@ async def run_pipeline(ctx: RunContext) -> None:
                         f"${top.dollars_at_risk_usd:,.0f} at risk addressed"))
 
 
+_DEPTH_KIND_TO_AGENT = {"brief": "briefer", "ranked_exposures": "enricher"}
+
+
 async def _run_depth_agents(ctx: RunContext) -> None:
-    """Iterate the B↔G registry with the shared session state (duck-typed:
-    `await agent.run(state)` / `agent(state)`); exceptions are contained here.
-    The state dict carries `_emit`, `_log_decision` and `_tools` handles so depth
-    agents narrate through the same bus as everyone else."""
+    """Run Session G's depth lane with the shared session state; never blocks
+    or breaks the core loop. Preferred path (per agents/depth/HANDOFF.md):
+    `agents.depth.run_all_depth(state, emit)` — Briefer→Enricher→BQExport with
+    every emission narrated through our bus; afterwards any decisions G buffered
+    on state["_decisions"] are written to the decision-log and mirrored on the
+    WS. Fallback: duck-typed iteration of DEPTH_AGENTS. With the phase0-empty
+    registry both paths are no-ops."""
+    import asyncio
+
     try:
-        from agents.depth import DEPTH_AGENTS
+        import agents.depth as depth
     except Exception as exc:  # registry must never break the core loop
         log.warning("depth registry import failed: %s", exc)
         return
-    if not DEPTH_AGENTS:
+    run_all = getattr(depth, "run_all_depth", None)
+    registry = getattr(depth, "DEPTH_AGENTS", []) or []
+    if run_all is None and not registry:
         return
 
-    def _emit(agent_name: str, kind: str, payload: dict) -> None:
-        ctx.bus.agent_emit(ctx.run_id, agent=agent_name, kind=kind, payload=payload)
+    loop = asyncio.get_running_loop()
 
-    async def _log(agent_name: str, kind: str, summary: str,
-                   evidence_event_ids: list[str], **kw) -> None:
-        await _log_decision(ctx, agent=agent_name, kind=kind, summary=summary,
-                            evidence_event_ids=evidence_event_ids, **kw)
+    def _emit_threadsafe(kind: str, payload: dict) -> None:
+        loop.call_soon_threadsafe(functools.partial(
+            ctx.bus.agent_emit, ctx.run_id,
+            agent=_DEPTH_KIND_TO_AGENT.get(kind, "depth"), kind=kind, payload=payload))
 
-    ctx.state["_emit"] = _emit
-    ctx.state["_log_decision"] = _log
-    ctx.state["_tools"] = ctx.tools
     ctx.state["_run_id"] = ctx.run_id
+    ctx.state["_tools"] = ctx.tools
 
-    for agent in DEPTH_AGENTS:
-        name = getattr(agent, "name", agent.__class__.__name__)
+    if run_all is not None:
         try:
-            runner = getattr(agent, "run", None)
-            result = runner(ctx.state) if callable(runner) else (
-                agent(ctx.state) if callable(agent) else None)
-            if inspect.isawaitable(result):
-                await result
+            # G's tasks are sync (BQ/GCS I/O) — keep the event loop (and WS) alive.
+            await asyncio.to_thread(run_all, ctx.state, _emit_threadsafe)
+        except Exception as exc:  # run_all_depth contains its own failures, but be safe
+            log.exception("run_all_depth failed (contained): %s", exc)
+    else:
+        for agent in registry:
+            name = getattr(agent, "name", agent.__class__.__name__)
+            try:
+                runner = getattr(agent, "run", None)
+                result = runner(ctx.state) if callable(runner) else (
+                    agent(ctx.state) if callable(agent) else None)
+                if inspect.isawaitable(result):
+                    await result
+            except Exception as exc:
+                log.exception("depth agent %s failed (contained): %s", name, exc)
+
+    # write G's buffered decisions (kinds brief/enrich) through the narrated path
+    for doc in ctx.state.get("_decisions", []) or []:
+        try:
+            doc.setdefault("run_id", ctx.run_id)
+            doc.setdefault("ts", now_iso())
+            doc.setdefault("decision_id", ctx.next_decision_id())
+            doc.setdefault("simulated", ctx.simulated)
+            await ctx.tools.call(
+                run_id=ctx.run_id, agent=AGENT, tool="write_decision", args=doc,
+                args_summary=f"log {doc.get('kind', 'depth')}: {str(doc.get('summary', ''))[:60]}",
+            )
+            ctx.bus.decision_logged(ctx.run_id, doc)
         except Exception as exc:
-            log.exception("depth agent %s failed (contained): %s", name, exc)
+            log.exception("depth decision write failed (contained): %s", exc)

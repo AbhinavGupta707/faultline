@@ -200,6 +200,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="faultline-agent", lifespan=lifespan)
 
+# Session G's depth routes (GET /analytics/summary, GET /report/{run_id}) — the
+# phase0 registry has no router; the merged depth lane provides one (HANDOFF.md).
+try:
+    import agents.depth as _depth
+    if hasattr(_depth, "router"):
+        app.include_router(_depth.router)
+except Exception as _exc:  # depth must never break the runtime
+    log.warning("depth router not mounted: %s", _exc)
+
 
 @app.get("/health")
 async def health():

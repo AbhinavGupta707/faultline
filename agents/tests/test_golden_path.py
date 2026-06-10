@@ -44,6 +44,21 @@ def validate_decision(doc: dict) -> None:
     jsonschema.validate(doc, {"$ref": "#/$defs/decision", "$defs": SCHEMA["$defs"]})
 
 
+def _is_depth_line(m: dict) -> bool:
+    """Session G depth-lane lines: brief emissions/decisions, the Enricher's
+    enriched:true ranked_exposures re-emit, and enrich decisions. The core
+    narration must be identical whether the depth registry is empty or full."""
+    if m["type"] == "agent.emit":
+        kind = m["payload"]["kind"]
+        if kind == "brief":
+            return True
+        if kind == "ranked_exposures" and m["payload"]["payload"].get("enriched"):
+            return True
+    if m["type"] == "decision.logged" and m["payload"]["kind"] in ("brief", "enrich"):
+        return True
+    return False
+
+
 def phase_signature(msgs: list[dict]) -> list[tuple]:
     sig = []
     for m in msgs:
@@ -54,14 +69,11 @@ def phase_signature(msgs: list[dict]) -> list[tuple]:
             continue
         if t == "status" and m.get("run_id") is None:
             continue
+        if _is_depth_line(m):
+            continue
         if t == "agent.emit":
-            kind = m["payload"]["kind"]
-            if kind == "brief":
-                continue
-            sig.append(("agent.emit", kind))
+            sig.append(("agent.emit", m["payload"]["kind"]))
         elif t == "decision.logged":
-            if m["payload"]["kind"] == "brief":
-                continue
             sig.append(("decision.logged", m["payload"]["kind"]))
         else:
             sig.append((t,))
@@ -118,7 +130,8 @@ def test_all_replay_message_types_are_narrated(golden_run):
 def test_ranked_exposures_values(golden_run):
     messages, _ = golden_run
     ranked = [m for m in messages
-              if m["type"] == "agent.emit" and m["payload"]["kind"] == "ranked_exposures"]
+              if m["type"] == "agent.emit" and m["payload"]["kind"] == "ranked_exposures"
+              and not m["payload"]["payload"].get("enriched")]
     assert len(ranked) == 1
     exposures = ranked[0]["payload"]["payload"]["exposures"]
     assert len(exposures) == 2
@@ -146,8 +159,8 @@ def test_ranked_exposures_values(golden_run):
 def test_decision_log_writes(golden_run):
     _, _ctx = golden_run
     decisions = elastic_fake.decisions()
-    kinds = [d["kind"] for d in decisions]
-    assert kinds == ["triage", "trace", "assess", "approval", "resource", "negotiate", "verify"]
+    core_kinds = [d["kind"] for d in decisions if d["kind"] not in ("brief", "enrich")]
+    assert core_kinds == ["triage", "trace", "assess", "approval", "resource", "negotiate", "verify"]
     for doc in decisions:
         validate_decision(doc)
         assert doc["evidence_event_ids"], f"decision {doc['decision_id']} lacks evidence"
