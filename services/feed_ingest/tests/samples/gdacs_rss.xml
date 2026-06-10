@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:dc="http://purl.org/dc/elements/1.1/"
+     xmlns:gdacs="http://www.gdacs.org"
+     xmlns:geo="http://www.w3.org/2003/01/geo/wgs84_pos#"
+     xmlns:georss="http://www.georss.org/georss">
+  <channel>
+    <title>GDACS RSS information</title>
+    <link>https://www.gdacs.org</link>
+    <description>Global Disaster Alert and Coordination System</description>
+    <item>
+      <title>Orange flood alert in India</title>
+      <description>Severe flooding in Gujarat affecting Vadodara district industrial estates after record monsoon rainfall.</description>
+      <link>https://www.gdacs.org/report.aspx?eventid=1062026&amp;eventtype=FL</link>
+      <pubDate>Wed, 10 Jun 2026 08:42:00 GMT</pubDate>
+      <gdacs:eventtype>FL</gdacs:eventtype>
+      <gdacs:alertlevel>Orange</gdacs:alertlevel>
+      <gdacs:eventid>1062026</gdacs:eventid>
+      <gdacs:country>India</gdacs:country>
+      <geo:Point>
+        <geo:lat>22.31</geo:lat>
+        <geo:long>73.18</geo:long>
+      </geo:Point>
+      <georss:point>22.31 73.18</georss:point>
+    </item>
+    <item>
+      <title>Red tropical cyclone alert (DELIA) in United States</title>
+      <description>Tropical Cyclone Delia approaching the Gulf Coast with sustained winds.</description>
+      <link>https://www.gdacs.org/report.aspx?eventid=900012&amp;eventtype=TC</link>
+      <pubDate>Wed, 10 Jun 2026 03:00:00 GMT</pubDate>
+      <gdacs:eventtype>TC</gdacs:eventtype>
+      <gdacs:alertlevel>Red</gdacs:alertlevel>
+      <gdacs:eventid>900012</gdacs:eventid>
+      <gdacs:country>United States</gdacs:country>
+      <geo:lat>29.76</geo:lat>
+      <geo:long>-93.30</geo:long>
+    </item>
+    <item>
+      <title>Green earthquake alert (Magnitude 5.1M) in Chile</title>
+      <description>Magnitude 5.1 earthquake offshore northern Chile, depth 30km.</description>
+      <link>https://www.gdacs.org/report.aspx?eventid=770088&amp;eventtype=EQ</link>
+      <pubDate>Wed, 10 Jun 2026 06:15:00 GMT</pubDate>
+      <gdacs:eventtype>EQ</gdacs:eventtype>
+      <gdacs:alertlevel>Green</gdacs:alertlevel>
+      <gdacs:eventid>770088</gdacs:eventid>
+      <gdacs:country>Chile</gdacs:country>
+      <georss:point>-23.65 -70.40</georss:point>
+    </item>
+    <item>
+      <title>Malformed item without coordinates</title>
+      <description>This item has no geo point and must be skipped.</description>
+      <link>https://www.gdacs.org/report.aspx?eventid=000000</link>
+      <pubDate>Wed, 10 Jun 2026 01:00:00 GMT</pubDate>
+      <gdacs:eventtype>VO</gdacs:eventtype>
+      <gdacs:alertlevel>Green</gdacs:alertlevel>
+      <gdacs:eventid>000000</gdacs:eventid>
+      <gdacs:country>Iceland</gdacs:country>
+    </item>
+  </channel>
+</rss>
