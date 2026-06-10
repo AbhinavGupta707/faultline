@@ -1,5 +1,33 @@
 # Voice Spike — verdict & evidence (Session E, 2026-06-10)
 
+## ✅ LIVE-VERIFIED on Vertex (creds in, real Gemini calls) — 2026-06-10
+
+Ran the real pipeline against project `faultline-hack` / us-central1 with ADC. Both
+directions pass end-to-end through the gateway WS (`pytest test_live.py` → 2 passed):
+- **Voice-OUT** — live two-party negotiation call: real native-audio frames + streaming
+  transcript, both speakers (faultline_agent + supplier), agreed summary, on
+  `gemini-live-2.5-flash-native-audio`.
+- **Voice-IN** — spoke "approve the re-source for the cold-brew line" → transcript
+  *"Approve the resource for the cold-brew line."* → intent
+  `{action: approve, confidence: 0.9, approval_id: apr-resource-coldbrew-01}`.
+
+### What the live calls forced us to change (vs. the plan's assumptions)
+1. **Live model**: only `gemini-live-2.5-flash-native-audio` exists on this project, and it is
+   **AUDIO-OUT ONLY** (TEXT → error 1007). `gemini-3.1-flash-live-preview` → 1008 not-found.
+2. **Voice-IN cannot use the Live model for transcription** — the native-audio model is
+   full-duplex conversational and returns *no* input-transcription for one-shot push-to-talk
+   audio (verified: zero messages back). → Voice-IN now transcribes **and** parses intent in a
+   single multimodal `gemini-2.5-flash` call with the mic audio as an inline WAV Part. Accurate,
+   all-Google. `rule_based_intent` remains the always-on fallback.
+3. **Text models**: `gemini-3.5-flash` and `gemini-3.1-pro` (plan defaults) **404** here. Only
+   the 2.5 family is present (`gemini-2.5-flash`, `gemini-2.5-pro`, `gemini-2.5-flash-lite`).
+   → Voice-in intent model defaults to `gemini-2.5-flash` (env `GEMINI_INTENT_MODEL`). **This
+   affects Session B / infra/env.example too — flagged separately.**
+
+All inference remains Gemini on Vertex → hackathon-compliant.
+
+---
+
 ## Verdict: **GO** — model `gemini-live-2.5-flash-native-audio` (Vertex, GA)
 
 The first-hour spike question was: can we do a browser mic↔speaker round-trip through the

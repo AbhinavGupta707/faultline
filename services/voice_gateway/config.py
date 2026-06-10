@@ -45,7 +45,18 @@ class Config:
         or "gemini-live-2.5-flash-native-audio"
     )
     flash_model: str = field(
-        default_factory=lambda: _clean(os.getenv("GEMINI_MODEL_FLASH")) or "gemini-3.5-flash"
+        default_factory=lambda: _clean(os.getenv("GEMINI_MODEL_FLASH")) or "gemini-2.5-flash"
+    )
+    # Text model used to parse the voice transcript into an intent. Defaults to an
+    # actually-available model: the live probe found gemini-3.5-flash 404s on the hack
+    # project; only the 2.5 family is present. Intent parsing is OPTIONAL — rule_based_intent
+    # is the always-on fallback, so a 404 here never breaks voice-in.
+    intent_model: str = field(
+        default_factory=lambda: _clean(os.getenv("GEMINI_INTENT_MODEL")) or "gemini-2.5-flash"
+    )
+    # Set GEMINI_INTENT_USE_LLM=0 to skip the LLM and always use the rule-based parser.
+    intent_use_llm: bool = field(
+        default_factory=lambda: (_clean(os.getenv("GEMINI_INTENT_USE_LLM")) or "1") not in ("0", "false", "no")
     )
 
     # Audio framing — fixed by the frozen contract (http_api.md / voice_in_client_msg).

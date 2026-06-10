@@ -15,12 +15,12 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 from typing import AsyncIterator, Awaitable, Callable
 
 from config import CONFIG
 from personas import (
     CallContext,
-    INTENT_SYSTEM_PROMPT,
     negotiator_system_prompt,
     supplier_system_prompt,
 )
@@ -41,6 +41,39 @@ def _client():
     )
 
 
+_RESOLVED_MODEL: str | None = None
+
+
+async def resolve_model(client) -> str:
+    """Return the first Live model that actually connects on this Vertex project.
+
+    Tries ``GEMINI_LIVE_MODEL`` then ``GEMINI_LIVE_MODEL_FALLBACK``. Per the spike,
+    gemini-3.1-flash-live-preview is not on Vertex yet (2026-06-10), so this transparently
+    degrades to gemini-live-2.5-flash-native-audio. Result is cached for the process.
+    """
+    global _RESOLVED_MODEL
+    if _RESOLVED_MODEL:
+        return _RESOLVED_MODEL
+
+    candidates = [CONFIG.live_model]
+    if CONFIG.live_model_fallback and CONFIG.live_model_fallback not in candidates:
+        candidates.append(CONFIG.live_model_fallback)
+
+    last_err: Exception | None = None
+    for model in candidates:
+        try:
+            # Probe with AUDIO — the native-audio model rejects TEXT output (1007).
+            async with client.aio.live.connect(model=model, config={"response_modalities": ["AUDIO"]}):
+                pass
+            _RESOLVED_MODEL = model
+            log.info("live model resolved: %s", model)
+            return model
+        except Exception as exc:  # noqa: BLE001 — probe; try the next candidate
+            last_err = exc
+            log.warning("live model %s unavailable (%s); trying next", model, exc)
+    raise RuntimeError(f"no Live model available on Vertex: {last_err}")
+
+
 def _send_audio(session, chunk: bytes):
     """Forward a PCM16/16k frame to the Live session, tolerant of SDK kwarg drift."""
     from google.genai import types
@@ -53,66 +86,84 @@ def _send_audio(session, chunk: bytes):
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Voice IN — transcribe push-to-talk audio and parse the intent in one Live turn.
-# Runs in TEXT modality with input-audio transcription on: the transcription is the
-# operator's words; the model's text reply is the JSON intent (system prompt in personas).
+# Voice IN.  The Live native-audio model is built for full-duplex *conversation* and does
+# NOT emit input transcription for one-shot buffered push-to-talk audio (verified: zero
+# messages back). So voice-in transcribes + parses intent in a single multimodal call to
+# gemini-2.5-flash with the mic audio as an inline WAV Part (verified accurate, all-Google).
+# rule_based_intent is the always-on fallback so a model error never breaks voice-in.
 # ──────────────────────────────────────────────────────────────────────────────
-async def transcribe_and_intent(
+async def transcribe_and_parse(
     audio_chunks: AsyncIterator[bytes],
     pending_approval_id: str | None,
     on_partial: Callable[[str], Awaitable[None]] | None = None,
-) -> tuple[str, str]:
-    """Returns (final_transcript, raw_model_text). Caller coerces raw text → voice_intent."""
-    system = INTENT_SYSTEM_PROMPT
-    if pending_approval_id:
-        system += f"\n\nPENDING APPROVAL CONTEXT: approval_id to use for approve/reject = \"{pending_approval_id}\"."
+) -> tuple[str, dict]:
+    """Buffer push-to-talk audio → one gemini-2.5-flash call → (transcript, voice_intent)."""
+    from intent import coerce_intent, rule_based_intent
 
-    config = {
-        "response_modalities": ["TEXT"],
-        "system_instruction": system,
-        "input_audio_transcription": {},
-    }
+    pcm = bytearray()
+    async for chunk in audio_chunks:
+        if chunk:
+            pcm.extend(chunk)
+    if not pcm or not CONFIG.intent_use_llm:
+        return "", rule_based_intent("", pending_approval_id)
 
+    wav = _pcm16_to_wav(bytes(pcm), CONFIG.input_sample_rate_hz)
     client = _client()
-    transcript_parts: list[str] = []
-    model_text_parts: list[str] = []
+    try:
+        from google.genai import types
 
-    async with client.aio.live.connect(model=CONFIG.live_model, config=config) as session:
-        receiver = asyncio.create_task(
-            _drain_intent(session, transcript_parts, model_text_parts, on_partial)
+        system = _audio_intent_prompt(pending_approval_id)
+        resp = await client.aio.models.generate_content(
+            model=CONFIG.intent_model,
+            contents=[types.Part.from_bytes(data=wav, mime_type="audio/wav"), "Parse the spoken command."],
+            config=types.GenerateContentConfig(
+                system_instruction=system,
+                response_mime_type="application/json",
+                temperature=0,
+            ),
         )
-        async for chunk in audio_chunks:
-            if chunk:
-                await _send_audio(session, chunk)
-        # Signal end of the user's audio turn.
-        try:
-            await session.send_realtime_input(audio_stream_end=True)
-        except TypeError:
-            await session.send_client_content(turns=[], turn_complete=True)
-        await receiver
+        import json as _json
 
-    return "".join(transcript_parts).strip(), "".join(model_text_parts).strip()
+        obj = _json.loads(resp.text or "{}")
+        transcript = str(obj.get("transcript") or obj.get("text") or "").strip()
+        intent = coerce_intent(obj, transcript, pending_approval_id)
+        if on_partial and transcript:
+            await on_partial(transcript)
+        return transcript, intent
+    except Exception as exc:  # noqa: BLE001 — degrade, keep voice-in alive
+        log.warning("voice-in audio intent (%s) failed: %s; rule-based fallback", CONFIG.intent_model, exc)
+        return "", rule_based_intent("", pending_approval_id)
 
 
-async def _drain_intent(session, transcript_parts, model_text_parts, on_partial):
-    async for msg in session.receive():
-        sc = getattr(msg, "server_content", None)
-        if sc is not None:
-            it = getattr(sc, "input_transcription", None)
-            if it and getattr(it, "text", None):
-                transcript_parts.append(it.text)
-                if on_partial:
-                    await on_partial("".join(transcript_parts).strip())
-            mt = getattr(sc, "model_turn", None)
-            if mt and getattr(mt, "parts", None):
-                for part in mt.parts:
-                    if getattr(part, "text", None):
-                        model_text_parts.append(part.text)
-            if getattr(sc, "turn_complete", False):
-                break
-        # Some SDK builds expose text directly on the message.
-        elif getattr(msg, "text", None):
-            model_text_parts.append(msg.text)
+def _audio_intent_prompt(pending_approval_id: str | None) -> str:
+    base = (
+        "You are the voice command parser for Faultline, a supply-chain control tower. "
+        "Listen to the audio and output ONLY one minified JSON object, no prose, no code fence:\n"
+        '{"transcript": <verbatim words>, '
+        '"action": one of "query"|"approve"|"reject"|"show"|"whatif"|"unknown", '
+        '"confidence": <0..1>, "product_id": <optional>, "supplier_id": <optional>, '
+        '"text": <normalized command>}\n'
+        "Rules: approve/reject when the user decides a pending approval (e.g. 'approve the "
+        "re-source for the cold-brew line'); show when focusing the map on something; query for "
+        "questions about state; whatif for hypotheticals ('what if Busan port closes'); unknown "
+        "if unclear (low confidence)."
+    )
+    if pending_approval_id:
+        base += f'\nA pending approval exists: set "approval_id":"{pending_approval_id}" for approve/reject.'
+    return base
+
+
+def _pcm16_to_wav(pcm: bytes, rate: int) -> bytes:
+    import io
+    import wave
+
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(rate)
+        wf.writeframes(pcm)
+    return buf.getvalue()
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -122,8 +173,10 @@ async def _drain_intent(session, transcript_parts, model_text_parts, on_partial)
 # ──────────────────────────────────────────────────────────────────────────────
 async def run_negotiation_call(
     ctx: CallContext,
-    max_turns: int = 6,
+    max_turns: int | None = None,
 ) -> AsyncIterator[tuple[str, str, bytes]]:
+    if max_turns is None:
+        max_turns = int(os.getenv("VOICE_CALL_MAX_TURNS", "6"))
     client = _client()
 
     neg_cfg = {
@@ -137,8 +190,9 @@ async def run_negotiation_call(
         "output_audio_transcription": {},
     }
 
-    async with client.aio.live.connect(model=CONFIG.live_model, config=neg_cfg) as neg, \
-            client.aio.live.connect(model=CONFIG.live_model, config=sup_cfg) as sup:
+    model = await resolve_model(client)
+    async with client.aio.live.connect(model=model, config=neg_cfg) as neg, \
+            client.aio.live.connect(model=model, config=sup_cfg) as sup:
         # Negotiator opens the call.
         prompt = "[The call has connected. Open the call now.]"
         speaker = "faultline_agent"

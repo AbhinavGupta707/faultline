@@ -22,7 +22,7 @@ from fastapi.staticfiles import StaticFiles
 
 import mock
 from config import CONFIG, describe
-from intent import coerce_intent, rule_based_intent
+from intent import rule_based_intent
 from personas import DEMO_CONTEXT
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -162,15 +162,12 @@ async def _run_live_intent(ws: WebSocket, queue: asyncio.Queue, pending_approval
         await _send_json(ws, {"type": "transcript.partial", "text": text})
 
     try:
-        transcript, raw = await live.transcribe_and_intent(chunks(), pending_approval_id, on_partial)
+        transcript, intent = await live.transcribe_and_parse(chunks(), pending_approval_id, on_partial)
     except Exception as exc:  # noqa: BLE001 — degrade to rule-based, keep the demo alive
         log.exception("live intent failed; falling back to rule-based")
         await _send_json(ws, {"type": "error", "message": f"live intent fell back: {exc}"})
-        transcript, raw = "", ""
+        transcript, intent = "", rule_based_intent("", pending_approval_id)
 
-    transcript = transcript or ""
-    intent = coerce_intent(raw, transcript, pending_approval_id) if raw else \
-        rule_based_intent(transcript, pending_approval_id)
     await _send_json(ws, {"type": "transcript.final", "text": transcript})
     await _send_json(ws, {"type": "intent", "transcript": transcript, "intent": intent})
 

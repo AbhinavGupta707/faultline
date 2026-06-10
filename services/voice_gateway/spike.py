@@ -105,9 +105,9 @@ async def live_roundtrip(wav_path: str) -> int:
             yield pcm[i:i + 3200]
             await asyncio.sleep(0.01)
 
-    transcript, raw = await live.transcribe_and_intent(chunks(), pending_approval_id=None)
+    transcript, intent = await live.transcribe_and_parse(chunks(), pending_approval_id=None)
     print("transcript:", transcript)
-    print("model intent:", raw)
+    print("intent:", intent)
     return 0
 
 
