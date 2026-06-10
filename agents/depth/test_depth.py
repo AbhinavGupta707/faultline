@@ -101,5 +101,22 @@ def test_enricher_reemits_valid_ranked_exposures():
     assert res.decision["kind"] == "enrich"
 
 
+def test_pharma_vertical_seeds_clean():
+    from agents.depth.verify_pharma import validate
+
+    problems = validate()
+    assert not problems, "pharma profile problems: " + "; ".join(problems[:5])
+
+
+def test_analytics_summary_endpoint_shape():
+    from starlette.testclient import TestClient
+    from agents.depth.serve import app
+
+    c = TestClient(app)
+    r = c.get("/analytics/summary?window=60")
+    assert r.status_code == 200
+    _check("analytics_summary", r.json())
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))

@@ -1,0 +1,147 @@
+/* Analytics panel — quiet, data-dense, instrument-like (faultline_ui_design_prompts.md).
+   Scoped under .fl-analytics so it never leaks into C1's shell or C2's panels. */
+.fl-analytics {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 12px;
+  font-family: var(--font-grotesque);
+  color: var(--ink);
+}
+
+.fl-analytics .fa-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.fl-analytics .fa-src {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.fl-analytics .fa-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--graph-edge);
+  box-shadow: 0 0 6px var(--graph-edge);
+}
+.fl-analytics .fa-dot.fixture { background: var(--ink-dim); box-shadow: none; }
+.fl-analytics .fa-tag {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--signal);
+  border: 1px solid color-mix(in srgb, var(--signal) 40%, transparent);
+  border-radius: 3px;
+  padding: 1px 5px;
+}
+
+/* $ averted counter */
+.fl-analytics .fa-counter {
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--secured) 8%, transparent), transparent);
+}
+.fl-analytics .fa-counter .fa-val {
+  font-family: var(--font-mono);
+  font-size: 30px;
+  font-weight: 600;
+  color: var(--secured);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.05;
+}
+.fl-analytics .fa-counter .fa-sub {
+  font-size: 11px;
+  color: var(--ink-dim);
+  margin-top: 2px;
+}
+
+.fl-analytics .fa-section-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 7px;
+}
+
+/* sparkline rows */
+.fl-analytics .fa-spark-row {
+  display: grid;
+  grid-template-columns: 1fr 96px 78px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-top: 1px solid var(--hairline);
+}
+.fl-analytics .fa-spark-row:first-child { border-top: none; }
+.fl-analytics .fa-prod {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fl-analytics .fa-spark { width: 96px; height: 26px; display: block; }
+.fl-analytics .fa-spark path { fill: none; stroke-width: 1.5; }
+.fl-analytics .fa-spark .fa-area { stroke: none; opacity: 0.16; }
+.fl-analytics .fa-metric {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.fl-analytics .fa-sevdot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* chokepoints */
+.fl-analytics .fa-choke {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 10px;
+  padding: 7px 0;
+  border-top: 1px solid var(--hairline);
+}
+.fl-analytics .fa-choke-name { font-size: 12px; display: flex; align-items: center; gap: 7px; }
+.fl-analytics .fa-tier {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  color: var(--ink-dim);
+  border: 1px solid var(--hairline);
+  border-radius: 3px;
+  padding: 0 4px;
+}
+.fl-analytics .fa-bar-wrap { display: flex; align-items: center; gap: 7px; }
+.fl-analytics .fa-bar {
+  height: 5px;
+  border-radius: 3px;
+  background: var(--risk);
+  min-width: 4px;
+}
+.fl-analytics .fa-count {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-dim);
+  font-variant-numeric: tabular-nums;
+}
+.fl-analytics .fa-prods { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px; }
+.fl-analytics .fa-chip {
+  font-size: 10px;
+  color: var(--ink-dim);
+  background: color-mix(in srgb, var(--landmass) 60%, transparent);
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+.fl-analytics .fa-empty { font-size: 12px; color: var(--ink-dim); }
