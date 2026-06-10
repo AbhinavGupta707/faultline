@@ -10,9 +10,17 @@ Gemini Live API bridge for Faultline. Owns voice-in (push-to-talk → intent) an
   until creds land.
 - **`live`** — real Vertex Live API. Needs ADC (`gcloud auth application-default login`) or
   `GOOGLE_APPLICATION_CREDENTIALS`, plus `GCP_PROJECT` (+ `VERTEX_LOCATION`, default
-  `us-central1`). Model from `GEMINI_LIVE_MODEL` (effective default
-  `gemini-live-2.5-flash-native-audio`; flips to `gemini-3.1-flash-live-preview` with one
-  env line once it reaches Vertex — no code change).
+  `us-central1`). **Live-verified 2026-06-10** on `faultline-hack` (`pytest test_live.py` → 2 passed).
+  - Voice-OUT runs on `GEMINI_LIVE_MODEL` (resolves to the first model that connects;
+    effective `gemini-live-2.5-flash-native-audio` — `gemini-3.1-flash-live-preview` is not on
+    Vertex yet, so it auto-degrades; flips back with one env line when 3.1 lands).
+  - Voice-IN transcribes + parses intent in one multimodal call to `GEMINI_INTENT_MODEL`
+    (default `gemini-2.5-flash`; the native-audio Live model is AUDIO-out only and returns no
+    input transcription for push-to-talk). `GEMINI_INTENT_USE_LLM=0` forces the rule-based parser.
+
+> Live model reality on this project (probed): only the **2.5 family** exists —
+> `gemini-2.5-flash` / `-pro` / `-flash-lite` + `gemini-live-2.5-flash-native-audio`.
+> `gemini-3.5-flash` / `gemini-3.1-pro` / `gemini-3.1-flash-live-preview` all 404/1008. See `../../SPIKE.md`.
 
 ## Run
 ```bash
