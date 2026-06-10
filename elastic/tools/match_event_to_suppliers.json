@@ -1,0 +1,13 @@
+{
+  "id": "match_event_to_suppliers",
+  "type": "esql",
+  "description": "The signature tool. Semantically matches unstructured event text (title + summary of a disruption) to supplier capability profiles using ELSER on the suppliers' profile_semantic field, ranked by relevance. Returns the suppliers most likely affected by the event, with a normalized score (>=0.5 = confident). Used by the Tracer to find directly-hit suppliers before graph traversal. Inputs: event_text (the event title and summary), size (max suppliers).",
+  "tags": ["faultline", "tracer", "elser"],
+  "configuration": {
+    "query": "FROM suppliers METADATA _score\n| WHERE profile_semantic:?event_text\n| EVAL semantic_score = _score, score = _score / (_score + 12.0), lat = ST_Y(location), lon = ST_X(location)\n| KEEP supplier_id, name, tier, lat, lon, country, region, components, alternate_for, certifications, lead_time_days, expedited_lead_time_days, capacity, profile_semantic, semantic_score, score\n| SORT score DESC\n| LIMIT ?size",
+    "params": {
+      "event_text": { "type": "string", "description": "The event title and summary text, e.g. 'Severe flooding in Vadodara Gujarat inundates chemical plants producing food-grade emulsifier'." },
+      "size": { "type": "integer", "description": "Maximum number of suppliers to return (e.g. 10)." }
+    }
+  }
+}

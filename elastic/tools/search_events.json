@@ -1,0 +1,13 @@
+{
+  "id": "search_events",
+  "type": "esql",
+  "description": "Hybrid search over live world-events (BM25 on title/summary + ELSER semantic on event_semantic). Returns ranked real-world disruption events (earthquakes, floods, storms, recalls, strikes, port disruptions). Simulated/what-if events are excluded. Used by the Watcher to triage the feed. Inputs: query (free text describing what to look for), size (max events).",
+  "tags": ["faultline", "watcher"],
+  "configuration": {
+    "query": "FROM world-events METADATA _score\n| WHERE simulated == false AND event_semantic:?query\n| EVAL score = _score, lat = ST_Y(location), lon = ST_X(location)\n| KEEP id, source, title, summary, event_type, place_name, region, severity_raw, published_at, url, simulated, lat, lon, score\n| SORT score DESC, published_at DESC\n| LIMIT ?size",
+    "params": {
+      "query": { "type": "string", "description": "Free-text description of the events to find, e.g. 'flooding at chemical or industrial plants in India'." },
+      "size": { "type": "integer", "description": "Maximum number of events to return (e.g. 20)." }
+    }
+  }
+}

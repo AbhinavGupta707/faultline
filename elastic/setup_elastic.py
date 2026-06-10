@@ -20,27 +20,42 @@ import sys
 from pathlib import Path
 
 MAPPINGS = Path(__file__).parent / "mappings"
+PIPELINES = Path(__file__).parent / "pipelines"
 
 
 def main() -> int:
     dry_run = "--dry-run" in sys.argv
     mapping_files = sorted(MAPPINGS.glob("*.json"))
+    pipeline_files = sorted(PIPELINES.glob("*.json")) if PIPELINES.exists() else []
 
-    # Validate every mapping file parses before touching the cluster.
+    # Validate every mapping + pipeline file parses before touching the cluster.
     parsed: list[tuple[str, dict]] = []
     for path in mapping_files:
         body = json.loads(path.read_text(encoding="utf-8"))
         parsed.append((path.stem, body))
+    pipelines = [(p.stem, json.loads(p.read_text(encoding="utf-8"))) for p in pipeline_files]
 
     if dry_run:
+        for name, _ in pipelines:
+            print(f"would apply pipeline: {name}")
         for name, _ in parsed:
             print(f"would apply mapping: {name}")
-        print(f"--dry-run — {len(parsed)} mappings validated; no cluster calls made.")
+        print(f"--dry-run — {len(pipelines)} pipelines + {len(parsed)} mappings validated; "
+              "no cluster calls made.")
         return 0
 
     from _env import Elastic  # local import so --dry-run needs no creds/requests
 
     es = Elastic()
+
+    # Pipelines first — indices may reference them as default_pipeline (PUT is idempotent).
+    for name, body in pipelines:
+        r = es.es("PUT", f"/_ingest/pipeline/{name}", json=body)
+        if r.status_code not in (200, 201):
+            print(f"ERROR creating pipeline {name}: {r.status_code} {r.text[:300]}")
+            return 1
+        print(f"pipeline ok: {name}")
+
     created, updated, unchanged = [], [], []
 
     for name, body in parsed:

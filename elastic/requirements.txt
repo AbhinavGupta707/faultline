@@ -1,0 +1,4 @@
+# Session A (elastic/ + data/) runtime deps. jsonschema + pytest come from the shared
+# requirements-dev.txt; these are the extras the setup/seed/verify scripts need.
+requests>=2.31
+mcp>=1.2

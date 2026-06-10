@@ -1,0 +1,8 @@
+{
+  "description": "Default pipeline for decision-log. The write_decision workflow can only carry simple scalar strings through its YAML templating, so it writes the whole decision as one JSON string in `_doc_json`. This pipeline parses that blob into a fully-typed decision doc (real evidence_event_ids array, related object, simulated boolean) and sets _id = decision_id so write_decision is idempotent.",
+  "processors": [
+    { "json": { "field": "_doc_json", "add_to_root": true } },
+    { "remove": { "field": "_doc_json" } },
+    { "set": { "field": "_id", "copy_from": "decision_id", "override": true, "if": "ctx.decision_id != null" } }
+  ]
+}

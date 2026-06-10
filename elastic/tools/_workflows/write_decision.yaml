@@ -1,0 +1,17 @@
+version: "1"
+name: faultline_write_decision
+description: Append a decision-log entry. Backend for the write_decision Agent Builder tool.
+enabled: true
+triggers:
+  - type: manual
+    inputs:
+      - name: doc_json
+        type: string
+        description: JSON string of the full decision object; parsed server-side by the decision-parse ingest pipeline.
+steps:
+  - name: index_decision
+    type: elasticsearch.index
+    with:
+      index: decision-log
+      document:
+        _doc_json: "{{ inputs.doc_json }}"
