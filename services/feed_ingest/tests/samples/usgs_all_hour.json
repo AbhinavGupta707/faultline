@@ -1,0 +1,85 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "generated": 1749535200000,
+    "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson",
+    "title": "USGS Magnitude 1.0+ Earthquakes, Past Hour",
+    "status": 200,
+    "api": "1.10.3",
+    "count": 4
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "mag": 5.7,
+        "place": "18 km SSE of Manay, Philippines",
+        "time": 1749531083000,
+        "updated": 1749534000000,
+        "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000qx2026",
+        "felt": null,
+        "tsunami": 0,
+        "sig": 500,
+        "net": "us",
+        "code": "7000qx2026",
+        "type": "earthquake",
+        "title": "M 5.7 - 18 km SSE of Manay, Philippines"
+      },
+      "geometry": { "type": "Point", "coordinates": [126.5523, 6.9214, 38] },
+      "id": "us7000qx2026"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "mag": 2.1,
+        "place": "12 km NE of Ridgecrest, CA",
+        "time": 1749533000000,
+        "updated": 1749534500000,
+        "url": "https://earthquake.usgs.gov/earthquakes/eventpage/ci40123456",
+        "felt": 3,
+        "tsunami": 0,
+        "sig": 68,
+        "net": "ci",
+        "code": "40123456",
+        "type": "earthquake",
+        "title": "M 2.1 - 12 km NE of Ridgecrest, CA"
+      },
+      "geometry": { "type": "Point", "coordinates": [-117.5481, 35.7382, 8.2] },
+      "id": "ci40123456"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "mag": 6.8,
+        "place": "South of the Fiji Islands",
+        "time": 1749529000000,
+        "updated": 1749534700000,
+        "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000qx9999",
+        "felt": null,
+        "tsunami": 1,
+        "sig": 711,
+        "net": "us",
+        "code": "7000qx9999",
+        "type": "earthquake",
+        "title": "M 6.8 - South of the Fiji Islands"
+      },
+      "geometry": { "type": "Point", "coordinates": [-178.21, -23.04, 540.1] },
+      "id": "us7000qx9999"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "mag": null,
+        "place": "unknown",
+        "time": 1749530000000,
+        "url": "https://earthquake.usgs.gov/earthquakes/eventpage/nodata",
+        "tsunami": 0,
+        "code": "nodata",
+        "type": "earthquake",
+        "title": "M ? - unknown"
+      },
+      "geometry": { "type": "Point", "coordinates": [] },
+      "id": "nodata"
+    }
+  ]
+}
