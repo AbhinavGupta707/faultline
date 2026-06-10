@@ -6,3 +6,4 @@
 2026-06-10 · D · NOAA/NWS active alerts (feed 3/5): UA header, polygon centroid or null-geom geocode, event-text→type map, Actual+Moderate filter. Live verified (321→231 kept). Tests 17/17.
 2026-06-10 · D · GDACS RSS/XML (feed 4/5): defusedxml (stdlib fallback), eventtype/alertlevel maps, geo:Point + georss fallback, RFC822 pubDate. Live verified (98 events). Tests 23/23.
 2026-06-10 · D · GDELT 2.0 Doc API (feed 5/5): supply-chain OR-query, cheap title relevance gate, type inference, URL dedupe, headline-geocode w/ place refine. 429/503 → no-op tick. Parse verified vs sample (live throttled — respected by 5-min cadence). ALL 5 FEEDS DONE. Tests 29/29.
+2026-06-10 · D · po_generator: branded contingent-PO PDF (reportlab, midnight-nautical palette, contingent banner, line item, notes) → GCS via lazy client w/ dry-run fallback. POST /po/render per http_api.md. Renders golden draft_po.json (3.4KB valid PDF). Tests 7/7. DoD MET: 5 feeds + PO PDF.
