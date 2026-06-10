@@ -16,6 +16,7 @@ import httpx
 from fastapi import FastAPI
 
 from es_writer import write_events
+from geocode import resolve_locations
 from sources import ORDER, REGISTRY
 
 app = FastAPI(title="feed-ingest")
@@ -41,7 +42,11 @@ async def _ingest_one(source: str, client: httpx.AsyncClient) -> dict:
     module = REGISTRY[source]
     raw = await module.fetch(client)
     docs = module.parse(raw)
+    # Sources with only place text (openFDA/GDELT) get geocoded here; coordinate
+    # sources pass through. Unresolvable locations are dropped, not half-written.
+    docs, ungeocoded = await resolve_locations(client, docs)
     result = write_events(docs)
+    result["skipped"] = result.get("skipped", 0) + ungeocoded
     return {"source": source, **result}
 
 

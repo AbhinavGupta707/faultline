@@ -13,6 +13,8 @@ import os
 
 import httpx
 
+from common import region_for
+
 _GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
 _cache: dict[str, tuple[float, float] | None] = {}
 
@@ -50,3 +52,31 @@ async def geocode(
         pass
     _cache[key] = None
     return None
+
+
+async def resolve_locations(
+    client: httpx.AsyncClient, docs: list[dict]
+) -> tuple[list[dict], int]:
+    """Fill `location`+`region` on any doc carrying `_geo_query` instead of coords.
+
+    Docs that already have `location` (USGS/NOAA/GDACS) pass through untouched. Docs
+    whose place text can't be geocoded are DROPPED — a world_event without a location
+    is unmatchable and the schema requires it. Returns (writable_docs, dropped).
+    """
+    out: list[dict] = []
+    dropped = 0
+    for doc in docs:
+        if "location" in doc:
+            doc.pop("_geo_query", None)
+            out.append(doc)
+            continue
+        query = doc.pop("_geo_query", None)
+        coords = await geocode(client, query) if query else None
+        if coords is None:
+            dropped += 1
+            continue
+        lat, lon = coords
+        doc["location"] = {"lat": round(lat, 5), "lon": round(lon, 5)}
+        doc.setdefault("region", region_for(lat, lon))
+        out.append(doc)
+    return out, dropped

@@ -79,17 +79,23 @@ def make_event(
     source: str,
     title: str,
     event_type: str,
-    lat: float,
-    lon: float,
     place_name: str,
     severity_raw: float,
     published_at: str,
+    lat: float | None = None,
+    lon: float | None = None,
+    geo_query: str | None = None,
     summary: str | None = None,
     url: str | None = None,
     region: str | None = None,
     simulated: bool = False,
 ) -> dict:
     """Assemble a contract-valid `world_event` doc.
+
+    Pass `lat`/`lon` when the source carries coordinates (USGS/NOAA/GDACS). When it
+    only carries place *text* (openFDA/GDELT), omit them and pass `geo_query`: the doc
+    is returned with a private `_geo_query` and NO `location`, to be resolved by
+    `geocode.resolve_locations` before it can be written.
 
     `event_semantic` is intentionally NOT set — the semantic_text mapping populates
     it server-side on ingest. Optional empty fields are pruned so docs stay tidy.
@@ -101,13 +107,19 @@ def make_event(
         "source": source,
         "title": title.strip(),
         "event_type": event_type,
-        "location": {"lat": round(float(lat), 5), "lon": round(float(lon), 5)},
         "place_name": place_name.strip(),
-        "region": region or region_for(lat, lon),
         "severity_raw": round(clamp01(severity_raw), 4),
         "published_at": published_at,
         "simulated": simulated,
     }
+    if lat is not None and lon is not None:
+        doc["location"] = {"lat": round(float(lat), 5), "lon": round(float(lon), 5)}
+        doc["region"] = region or region_for(lat, lon)
+    else:
+        # Geo deferred — resolve_locations fills location+region (or drops the doc).
+        doc["_geo_query"] = (geo_query or place_name).strip()
+        if region:
+            doc["region"] = region
     if summary and summary.strip():
         doc["summary"] = summary.strip()
     if url and url.strip():

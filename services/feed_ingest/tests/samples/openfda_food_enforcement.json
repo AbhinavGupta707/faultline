@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "disclaimer": "Do not rely on openFDA to make decisions regarding medical care.",
+    "terms": "https://open.fda.gov/terms/",
+    "license": "https://open.fda.gov/license/",
+    "last_updated": "2026-06-08",
+    "results": { "skip": 0, "limit": 100, "total": 3 }
+  },
+  "results": [
+    {
+      "status": "Ongoing",
+      "city": "Edison",
+      "state": "NJ",
+      "country": "United States",
+      "classification": "Class I",
+      "product_type": "Food",
+      "event_id": "90871",
+      "recalling_firm": "Asha Food Ingredients LLC",
+      "report_date": "20260604",
+      "recall_initiation_date": "20260529",
+      "recall_number": "F-1188-2026",
+      "product_description": "Food-grade soy lecithin emulsifier blend, 25 kg bags, lot E471-2026-Q2",
+      "reason_for_recall": "Undeclared milk allergen detected in finished emulsifier blend due to shared processing line.",
+      "distribution_pattern": "Distributed nationwide and to Canada via industrial buyers.",
+      "voluntary_mandated": "Voluntary: Firm initiated",
+      "initial_firm_notification": "Letter"
+    },
+    {
+      "status": "Ongoing",
+      "city": "Fresno",
+      "state": "CA",
+      "country": "United States",
+      "classification": "Class II",
+      "product_type": "Food",
+      "event_id": "90872",
+      "recalling_firm": "Valley Roasters Inc",
+      "report_date": "20260601",
+      "recall_initiation_date": "20260527",
+      "recall_number": "F-1190-2026",
+      "product_description": "Cold-brew coffee concentrate, 1 gal containers",
+      "reason_for_recall": "Potential spoilage from underprocessing.",
+      "distribution_pattern": "CA, OR, WA retail.",
+      "voluntary_mandated": "Voluntary: Firm initiated",
+      "initial_firm_notification": "E-Mail"
+    },
+    {
+      "status": "Completed",
+      "city": "",
+      "state": "",
+      "country": "United States",
+      "classification": "Class III",
+      "product_type": "Food",
+      "event_id": "90873",
+      "recalling_firm": "Generic Snacks Co",
+      "report_date": "20260530",
+      "product_description": "Granola bars",
+      "reason_for_recall": "Mislabeled net weight.",
+      "distribution_pattern": "Nationwide."
+    }
+  ]
+}
