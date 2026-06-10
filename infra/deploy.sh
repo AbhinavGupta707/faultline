@@ -83,7 +83,7 @@ if want feed_ingest; then
   deploy_run faultline-feed-ingest "$SA_SVC" \
     --no-allow-unauthenticated --memory=512Mi \
     ${SEC:+--set-secrets=${SEC}} \
-    --set-env-vars="ELASTIC_MODE=${ELASTIC_MODE:-mock},ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-},ELASTIC_EVENTS_INDEX=${ELASTIC_EVENTS_INDEX:-world-events-dev}"
+    --set-env-vars="ELASTIC_MODE=${ELASTIC_MODE:-mock},ELASTIC_ES_URL=${ELASTIC_ES_URL:-${ELASTICSEARCH_URL:-}},ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-${ELASTIC_ES_URL:-}},ELASTIC_EVENTS_INDEX=${ELASTIC_EVENTS_INDEX:-world-events-dev}"
   gcloud run services add-iam-policy-binding faultline-feed-ingest --region="$REGION" \
     --member="serviceAccount:${SA_SVC}" --role="roles/run.invoker" --quiet >/dev/null
 fi
@@ -99,7 +99,7 @@ if want voice_gateway; then
   build_image faultline-voice-gateway services/voice_gateway/Dockerfile
   deploy_run faultline-voice-gateway "$SA_AGENT" \
     --allow-unauthenticated --timeout=3600 --session-affinity --memory=1Gi \
-    --set-env-vars="GCP_PROJECT=${PROJECT},VERTEX_LOCATION=${REGION},VOICE_MODE=${VOICE_MODE:-mock},GEMINI_LIVE_MODEL=${GEMINI_LIVE_MODEL:-gemini-live-2.5-flash-native-audio},GEMINI_LIVE_MODEL_FALLBACK=${GEMINI_LIVE_MODEL_FALLBACK:-gemini-live-2.5-flash-native-audio},GEMINI_MODEL_FLASH=${GEMINI_MODEL_FLASH:-gemini-3.5-flash}"
+    --set-env-vars="GCP_PROJECT=${PROJECT},VERTEX_LOCATION=${REGION},GEMINI_LOCATION=${GEMINI_LOCATION:-global},VOICE_MODE=${VOICE_MODE:-mock},GEMINI_LIVE_MODEL=${GEMINI_LIVE_MODEL:-gemini-live-2.5-flash-native-audio},GEMINI_LIVE_MODEL_FALLBACK=${GEMINI_LIVE_MODEL_FALLBACK:-gemini-live-2.5-flash-native-audio},GEMINI_INTENT_MODEL=${GEMINI_INTENT_MODEL:-gemini-2.5-flash},GEMINI_MODEL_FLASH=${GEMINI_MODEL_FLASH:-gemini-3.5-flash}"
 fi
 
 # agents deploys last of the Run services so PO_GENERATOR_URL resolves on a cold project
@@ -111,7 +111,7 @@ if want agents; then
     --allow-unauthenticated --timeout=3600 --session-affinity \
     --min-instances=1 --max-instances=2 --memory=1Gi --cpu=1 --no-cpu-throttling \
     ${SEC:+--set-secrets=${SEC}} \
-    --set-env-vars="GCP_PROJECT=${PROJECT},VERTEX_LOCATION=${REGION},GCS_BUCKET=${BUCKET},BQ_DATASET=${BQ_DATASET:-faultline},GEMINI_MODEL_PRO=${GEMINI_MODEL_PRO:-gemini-3.1-pro},GEMINI_MODEL_FLASH=${GEMINI_MODEL_FLASH:-gemini-3.5-flash},ELASTIC_MODE=${ELASTIC_MODE:-mock},ELASTIC_EVENTS_INDEX=${ELASTIC_EVENTS_INDEX:-world-events},ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-},COMPANY_PROFILE=${COMPANY_PROFILE:-company_profile.json},PO_GENERATOR_URL=${PO_URL}"
+    --set-env-vars="GCP_PROJECT=${PROJECT},VERTEX_LOCATION=${REGION},GEMINI_LOCATION=${GEMINI_LOCATION:-global},GCS_BUCKET=${BUCKET},BQ_DATASET=${BQ_DATASET:-faultline},GEMINI_MODEL_PRO=${GEMINI_MODEL_PRO:-gemini-3.1-pro-preview},GEMINI_MODEL_FLASH=${GEMINI_MODEL_FLASH:-gemini-3.5-flash},ELASTIC_MODE=${ELASTIC_MODE:-mock},ELASTIC_EVENTS_INDEX=${ELASTIC_EVENTS_INDEX:-world-events},ELASTIC_ES_URL=${ELASTIC_ES_URL:-${ELASTICSEARCH_URL:-}},ELASTICSEARCH_URL=${ELASTICSEARCH_URL:-${ELASTIC_ES_URL:-}},COMPANY_PROFILE=${COMPANY_PROFILE:-company_profile.json},PO_GENERATOR_URL=${PO_URL}"
 fi
 
 # ── Frontend → Firebase Hosting ──────────────────────────────────────────────
