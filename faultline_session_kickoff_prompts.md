@@ -159,7 +159,7 @@ Build against contracts/fixtures/ run-state until S1 gives you real shapes. Defi
 ## F — Infra, integration & demo (runbook — keep this session open all day)
 
 ```
-You are Session F (integration & demo) of the Faultline build — the only session with merge authority and the only one allowed to amend contracts/ post-freeze. Read faultline_implementation_plan.md and faultline_parallel_execution_plan.md at repo root. You work on main in the primary repo; the seven workstream worktrees are ../faultline-{a,b,c1,c2,d,e,g}.
+You are Session F (integration & demo) of the Faultline build — the only session with merge authority and the only one allowed to amend contracts/ post-freeze. Read faultline_implementation_plan.md and faultline_parallel_execution_plan.md at repo root. You work on main in the primary repo; the seven workstream worktrees are ~/code/faultline-sessions/{a,b,c1,c2,d,e,g}.
 
 STANDING DUTIES (loop until submission):
 - Hourly: scan each worktree branch + its STATUS.md; merge anything green to main (ownership makes merges conflict-free — a real conflict means someone broke ownership: fix the offender, not the merge). Keep main always deployable.
@@ -183,5 +183,5 @@ MILESTONE DUTIES (times = before the June 11 2:00 PM PT deadline; full table in 
 | Order | Session | Worktree | Blocks on |
 |---|---|---|---|
 | 1 | P0 | main repo | — |
-| 2 (all at once) | A, B, C1, C2, D, E, G | `../faultline-*` | `phase0` tag |
+| 2 (all at once) | A, B, C1, C2, D, E, G | `~/code/faultline-sessions/*` | `phase0` tag |
 | 2 | F | main repo | `phase0` tag |
