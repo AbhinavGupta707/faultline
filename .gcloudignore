@@ -1,0 +1,10 @@
+# Cloud Build upload filter (docker contexts are repo-root; web never builds in docker)
+.git
+.gcloudignore
+web/
+node_modules/
+**/__pycache__/
+**/.venv/
+*.md
+!contracts/**/*.md
+.env
