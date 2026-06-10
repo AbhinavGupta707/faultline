@@ -56,17 +56,27 @@ async def run(ctx: RunContext) -> RelevantEventsPayload:
         args_summary=f"events last {WINDOW_MINUTES} min near supplier regions",
     )
     events = [WorldEvent.model_validate(e) for e in out.get("events", [])]
+    if ctx.focus_event and ctx.focus_event["id"] not in {e.id for e in events}:
+        # live search_events excludes simulated docs — surface the what-if event
+        events.insert(0, WorldEvent.model_validate(ctx.focus_event))
     considered = len(events)
 
     if ctx.simulated and ctx.focus_event_id:
         chosen = [e for e in events if e.id == ctx.focus_event_id]
     else:
-        chosen = [
+        candidates = [
             e for e in events
             if not e.simulated
             and e.id not in ctx.exclude_event_ids
             and e.severity_raw >= SEVERITY_THRESHOLD
-        ][:MAX_RELEVANT]
+        ]
+        # triage the biggest stories first, not search-engine relevance order
+        chosen = sorted(candidates, key=lambda e: e.severity_raw, reverse=True)[:MAX_RELEVANT]
+        # operator-pinned investigation: a focused live run always carries its event
+        if ctx.focus_event_id and not any(e.id == ctx.focus_event_id for e in chosen):
+            focus = next((e for e in events if e.id == ctx.focus_event_id), None)
+            if focus:
+                chosen.insert(0, focus)
 
     why: dict[str, str] = {e.id: _template_why(e) for e in chosen}
     hints: dict[str, list[str]] = {e.id: [] for e in chosen}

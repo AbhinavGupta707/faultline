@@ -60,13 +60,14 @@ STATE = AppState()
 
 # ── run management ───────────────────────────────────────────────
 async def _execute_run(run_id: str, mode: str, scenario: Optional[WhatifScenario],
-                       focus_event_id: Optional[str]) -> None:
+                       focus_event_id: Optional[str],
+                       focus_event: Optional[dict] = None) -> None:
     async with STATE.run_lock:
         STATE.active_run_id = run_id
         ctx = RunContext(
             run_id=run_id, mode=mode, bus=STATE.bus, tools=STATE.tools,
             llm=STATE.llm, approvals=STATE.approvals, scenario=scenario,
-            focus_event_id=focus_event_id,
+            focus_event_id=focus_event_id, focus_event=focus_event,
             exclude_event_ids=set(STATE.seen_event_ids),
         )
         try:
@@ -85,10 +86,11 @@ async def _execute_run(run_id: str, mode: str, scenario: Optional[WhatifScenario
 
 
 def start_run(mode: str, scenario: Optional[WhatifScenario] = None,
-              focus_event_id: Optional[str] = None) -> str:
+              focus_event_id: Optional[str] = None,
+              focus_event: Optional[dict] = None) -> str:
     run_id = STATE.next_run_id()
     task = asyncio.get_running_loop().create_task(
-        _execute_run(run_id, mode, scenario, focus_event_id))
+        _execute_run(run_id, mode, scenario, focus_event_id, focus_event))
     STATE.tasks.append(task)
     STATE.tasks[:] = [t for t in STATE.tasks if not t.done()]
     return run_id
@@ -158,7 +160,8 @@ async def _write_world_event(doc: dict) -> None:
 async def launch_whatif(scenario: WhatifScenario) -> tuple[str, str]:
     event = scenario_to_event(scenario)
     await _write_world_event(event)
-    run_id = start_run("simulated", scenario=scenario, focus_event_id=event["id"])
+    run_id = start_run("simulated", scenario=scenario,
+                       focus_event_id=event["id"], focus_event=event)
     return run_id, event["id"]
 
 

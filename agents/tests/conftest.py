@@ -3,7 +3,9 @@ import os
 import sys
 from pathlib import Path
 
-os.environ["ELASTIC_MODE"] = "mock"
+# Default is hermetic mock; FAULTLINE_TEST_ELASTIC=live runs the same suite
+# against the real cluster (the S1 gate: same test green for real).
+os.environ["ELASTIC_MODE"] = os.getenv("FAULTLINE_TEST_ELASTIC", "mock")
 os.environ["GEMINI_MODE"] = "off"
 os.environ["CONTROL_LOOP"] = "0"
 os.environ["NARRATION_DELAY_S"] = "0"

@@ -26,12 +26,13 @@ def client():
 
 
 def test_health(client):
+    import os
     resp = client.get("/health")
     assert resp.status_code == 200
     body = resp.json()
     assert body["ok"] is True
     assert body["service"] == "faultline-agent"
-    assert body["mode"] == "mock"
+    assert body["mode"] == os.environ["ELASTIC_MODE"]
     jsonschema.validate(body, {"$ref": "#/$defs/health_response", "$defs": SCHEMA["$defs"]})
 
 
