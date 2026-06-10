@@ -94,8 +94,9 @@ async def _run_golden(approve: bool = True, note: str | None = None):
         approvals.resolve(approvals.pending_ids()[0], approve, note)
 
     decider = asyncio.create_task(auto_decider())
+    timeout = 180 if ctx.llm.enabled() else 30  # real Gemini calls need headroom
     try:
-        await asyncio.wait_for(orchestrator.run_pipeline(ctx), timeout=30)
+        await asyncio.wait_for(orchestrator.run_pipeline(ctx), timeout=timeout)
     finally:
         decider.cancel()
     return list(bus.history), ctx

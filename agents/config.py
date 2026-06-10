@@ -1,9 +1,32 @@
 """Runtime configuration — every switch is an env var (impl plan §14).
 
 Values are read live (not cached at import) so tests and the mock→live flip
-(ELASTIC_MODE) never require a restart of the interpreter.
+(ELASTIC_MODE) never require a restart of the interpreter. A repo-root `.env`
+(copied from infra/env.example) is loaded once at import WITHOUT overriding
+real environment variables — Cloud Run env vars and test overrides always win.
 """
 import os
+from pathlib import Path
+
+
+def _load_dotenv() -> None:
+    path = Path(__file__).resolve().parents[1] / ".env"
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        value = value.strip()
+        if value[:1] in ("'", '"') and value[-1:] == value[:1]:
+            value = value[1:-1]
+        else:
+            value = value.split(" #")[0].rstrip()  # unquoted inline comments
+        os.environ.setdefault(key.strip(), value)
+
+
+_load_dotenv()
 
 
 def elastic_mode() -> str:
@@ -33,8 +56,9 @@ def elastic_api_key() -> str:
 
 
 def elasticsearch_url() -> str:
-    """Direct ES endpoint — needed only for live-mode what-if event writes."""
-    return os.getenv("ELASTICSEARCH_URL", "").rstrip("/")
+    """Direct ES endpoint — needed only for live-mode what-if event writes.
+    Canonical env name is ELASTIC_ES_URL (per infra .env); old alias kept."""
+    return (os.getenv("ELASTIC_ES_URL") or os.getenv("ELASTICSEARCH_URL", "")).rstrip("/")
 
 
 def events_index() -> str:

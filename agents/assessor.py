@@ -34,8 +34,10 @@ AT_RISK_GAP_DAYS = 7  # uncovered gap ≥ this → at_risk; any smaller gap → 
 
 
 class _Refinement(BaseModel):
+    # No Field(gt/lt) here: google-genai's response_schema converter rejects
+    # exclusiveMinimum/Maximum. Bounds are clamped in code after the call.
     exposure_id: str
-    est_disruption_days: float = Field(gt=0, lt=365)
+    est_disruption_days: float
     rationale: str
 
 
@@ -118,6 +120,7 @@ async def run(ctx: RunContext, paths_payload: ExposurePathsPayload,
     if exposures and ctx.llm.enabled():
         listing = "\n".join(
             f"- {e.exposure_id}: {e.product_name} / {e.component_id}, cover {e.days_of_cover} d, "
+            f"daily revenue ${(e.monthly_revenue_usd or 0) / 30:,.0f}, "
             f"deterministic est {e.est_disruption_days} d. Event: {primary.title}"
             for e in exposures
         )
@@ -133,7 +136,7 @@ async def run(ctx: RunContext, paths_payload: ExposurePathsPayload,
                 r = by_id.get(e.exposure_id)
                 if r is None:
                     continue
-                e.est_disruption_days = float(round(r.est_disruption_days))
+                e.est_disruption_days = float(round(min(120.0, max(1.0, r.est_disruption_days))))
                 gap = max(0.0, e.est_disruption_days - e.days_of_cover)
                 e.dollars_at_risk_usd = float(round((e.monthly_revenue_usd or 0) / 30 * gap))
                 e.severity = severity_score(primary.severity_raw, gap, e.est_disruption_days)
