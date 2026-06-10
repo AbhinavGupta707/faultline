@@ -1,0 +1,103 @@
+{
+  "type": "FeatureCollection",
+  "title": "Current watches, warnings, and advisories",
+  "updated": "2026-06-10T03:05:00+00:00",
+  "features": [
+    {
+      "id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.delia.2026",
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-93.6, 29.6], [-93.0, 29.6], [-93.0, 30.0], [-93.6, 30.0], [-93.6, 29.6]]]
+      },
+      "properties": {
+        "id": "urn:oid:2.49.0.1.840.0.delia.2026",
+        "areaDesc": "Cameron Parish; Calcasieu Parish",
+        "sent": "2026-06-10T03:00:00-05:00",
+        "effective": "2026-06-10T03:00:00-05:00",
+        "expires": "2026-06-11T15:00:00-05:00",
+        "status": "Actual",
+        "messageType": "Alert",
+        "category": "Met",
+        "severity": "Severe",
+        "certainty": "Likely",
+        "urgency": "Expected",
+        "event": "Tropical Storm Warning",
+        "headline": "Tropical Storm Warning issued June 10 for the southwest Louisiana coast",
+        "description": "Tropical Storm Delia is expected to make landfall near Cameron Parish within 36 hours with sustained winds of 60 mph and 6-10 inches of rain.\nIndustrial facilities along the Calcasieu Ship Channel are beginning precautionary shutdowns.",
+        "instruction": "Complete preparations and follow local official guidance.",
+        "senderName": "NWS Lake Charles LA"
+      }
+    },
+    {
+      "id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.flood.guj.2026",
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "id": "urn:oid:2.49.0.1.840.0.flood.miss.2026",
+        "areaDesc": "Hancock County; Harrison County",
+        "sent": "2026-06-10T01:30:00-05:00",
+        "status": "Actual",
+        "messageType": "Update",
+        "category": "Met",
+        "severity": "Moderate",
+        "event": "Flood Warning",
+        "headline": "Flood Warning for coastal Mississippi",
+        "description": "Rising water along tidal rivers; minor to moderate flooding expected.",
+        "instruction": "Turn around, don't drown."
+      }
+    },
+    {
+      "id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.minor.2026",
+      "type": "Feature",
+      "geometry": null,
+      "properties": {
+        "id": "urn:oid:2.49.0.1.840.0.minor.2026",
+        "areaDesc": "Galveston County",
+        "sent": "2026-06-10T02:00:00-05:00",
+        "status": "Actual",
+        "messageType": "Alert",
+        "severity": "Minor",
+        "event": "Small Craft Advisory",
+        "headline": "Small Craft Advisory",
+        "description": "Choppy seas for small craft."
+      }
+    },
+    {
+      "id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.cancel.2026",
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-95.0, 29.0], [-94.0, 29.0], [-94.0, 30.0], [-95.0, 30.0], [-95.0, 29.0]]]
+      },
+      "properties": {
+        "id": "urn:oid:2.49.0.1.840.0.cancel.2026",
+        "areaDesc": "Harris County",
+        "sent": "2026-06-10T02:30:00-05:00",
+        "status": "Actual",
+        "messageType": "Cancel",
+        "severity": "Severe",
+        "event": "Tornado Warning",
+        "headline": "Tornado Warning cancelled"
+      }
+    },
+    {
+      "id": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.exercise.2026",
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[-90.0, 35.0], [-89.0, 35.0], [-89.0, 36.0], [-90.0, 36.0], [-90.0, 35.0]]]
+      },
+      "properties": {
+        "id": "urn:oid:2.49.0.1.840.0.exercise.2026",
+        "areaDesc": "Shelby County",
+        "sent": "2026-06-10T00:00:00-05:00",
+        "status": "Exercise",
+        "messageType": "Alert",
+        "severity": "Severe",
+        "event": "Red Flag Warning",
+        "headline": "EXERCISE - not a real alert"
+      }
+    }
+  ]
+}
