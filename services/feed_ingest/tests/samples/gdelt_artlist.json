@@ -1,0 +1,54 @@
+{
+  "articles": [
+    {
+      "url": "https://www.reuters.com/world/india/vadodara-chemical-plant-fire-2026-06-10/",
+      "url_mobile": "",
+      "title": "Chemical plant fire halts production in Vadodara industrial estate",
+      "seendate": "20260610T084500Z",
+      "socialimage": "https://example.com/a.jpg",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "India"
+    },
+    {
+      "url": "https://www.bloomberg.com/news/busan-port-strike-2026-06-10",
+      "url_mobile": "",
+      "title": "Port strike at Busan threatens to disrupt Asian supply chain for weeks",
+      "seendate": "20260610T070000Z",
+      "socialimage": "",
+      "domain": "bloomberg.com",
+      "language": "English",
+      "sourcecountry": "South Korea"
+    },
+    {
+      "url": "https://www.espn.com/soccer/match-report-2026-06-10",
+      "url_mobile": "",
+      "title": "Local club wins championship in thrilling final",
+      "seendate": "20260610T060000Z",
+      "socialimage": "",
+      "domain": "espn.com",
+      "language": "English",
+      "sourcecountry": "United States"
+    },
+    {
+      "url": "https://www.reuters.com/world/india/vadodara-chemical-plant-fire-2026-06-10/",
+      "url_mobile": "",
+      "title": "Chemical plant fire halts production in Vadodara industrial estate (republished)",
+      "seendate": "20260610T090000Z",
+      "socialimage": "",
+      "domain": "reuters.com",
+      "language": "English",
+      "sourcecountry": "India"
+    },
+    {
+      "url": "https://www.aljazeera.com/news/brazil-frost-coffee-2026-06-10",
+      "url_mobile": "",
+      "title": "Severe frost damages coffee crop across Minas Gerais, prices surge",
+      "seendate": "20260610T053000Z",
+      "socialimage": "",
+      "domain": "aljazeera.com",
+      "language": "English",
+      "sourcecountry": "Brazil"
+    }
+  ]
+}

@@ -105,6 +105,7 @@ def make_event(
     url: str | None = None,
     region: str | None = None,
     simulated: bool = False,
+    refine_place: bool = False,
 ) -> dict:
     """Assemble a contract-valid `world_event` doc.
 
@@ -136,6 +137,9 @@ def make_event(
         doc["_geo_query"] = (geo_query or place_name).strip()
         if region:
             doc["region"] = region
+        if refine_place:
+            # Adopt the geocoder's formatted address as place_name post-resolution.
+            doc["_refine_place"] = True
     if summary and summary.strip():
         doc["summary"] = summary.strip()
     if url and url.strip():

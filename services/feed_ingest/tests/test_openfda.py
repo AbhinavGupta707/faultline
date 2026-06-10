@@ -52,7 +52,7 @@ def test_empty_city_falls_back_to_country():
 def test_geocoded_docs_are_contract_valid(assert_valid_events, monkeypatch):
     # Stub the geocoder: Edison NJ-ish coords for everything.
     async def fake_geocode(client, query):
-        return (40.5187, -74.4121)
+        return (40.5187, -74.4121, "Edison, NJ, USA")
 
     monkeypatch.setattr(geocode, "geocode", fake_geocode)
     resolved, dropped = asyncio.run(geocode.resolve_locations(None, parsed()))
@@ -62,6 +62,8 @@ def test_geocoded_docs_are_contract_valid(assert_valid_events, monkeypatch):
         assert "_geo_query" not in ev
         assert ev["location"] == {"lat": 40.5187, "lon": -74.4121}
         assert ev["region"] == "north-america"
+        # openFDA does not refine place_name from the geocoder.
+        assert ev["place_name"].endswith("United States")
     assert_valid_events(resolved)
 
 

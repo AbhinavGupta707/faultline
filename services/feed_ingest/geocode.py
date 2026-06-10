@@ -16,13 +16,13 @@ import httpx
 from common import region_for
 
 _GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
-_cache: dict[str, tuple[float, float] | None] = {}
+_cache: dict[str, tuple[float, float, str] | None] = {}
 
 
 async def geocode(
     client: httpx.AsyncClient, query: str
-) -> tuple[float, float] | None:
-    """Resolve free-text place → (lat, lon). Cached; None on miss."""
+) -> tuple[float, float, str] | None:
+    """Resolve free-text place → (lat, lon, formatted_address). Cached; None on miss."""
     key = (query or "").strip().lower()
     if not key:
         return None
@@ -45,7 +45,8 @@ async def geocode(
         results = data.get("results") or []
         if data.get("status") == "OK" and results:
             loc = results[0]["geometry"]["location"]
-            out = (float(loc["lat"]), float(loc["lng"]))
+            addr = results[0].get("formatted_address", "")
+            out = (float(loc["lat"]), float(loc["lng"]), addr)
             _cache[key] = out
             return out
     except (httpx.HTTPError, KeyError, ValueError):
@@ -68,15 +69,21 @@ async def resolve_locations(
     for doc in docs:
         if "location" in doc:
             doc.pop("_geo_query", None)
+            doc.pop("_refine_place", None)
             out.append(doc)
             continue
         query = doc.pop("_geo_query", None)
+        refine = doc.pop("_refine_place", False)
         coords = await geocode(client, query) if query else None
         if coords is None:
             dropped += 1
             continue
-        lat, lon = coords
+        lat, lon, addr = coords
         doc["location"] = {"lat": round(lat, 5), "lon": round(lon, 5)}
         doc.setdefault("region", region_for(lat, lon))
+        # GDELT-style docs only have a coarse place label until geocoding resolves
+        # the real one from the headline; adopt the formatted address when asked.
+        if refine and addr:
+            doc["place_name"] = addr
         out.append(doc)
     return out, dropped

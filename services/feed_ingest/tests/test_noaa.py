@@ -56,7 +56,7 @@ def test_polygon_docs_are_contract_valid(assert_valid_events):
 
 def test_null_geom_doc_valid_after_geocode(assert_valid_events, monkeypatch):
     async def fake_geocode(client, query):
-        return (30.31, -89.42)
+        return (30.31, -89.42, "Hancock County, MS, USA")
 
     monkeypatch.setattr(geocode, "geocode", fake_geocode)
     resolved, dropped = asyncio.run(geocode.resolve_locations(None, parsed()))
