@@ -1,0 +1,110 @@
+{
+  "company": {
+    "name": "Meridian Therapeutics, Inc.",
+    "hq": "Boston, Massachusetts, US",
+    "vertical": "pharmaceutical",
+    "description": "Mid-market specialty pharma: a sterile oncology injectable, an extended-release cardiology tablet, and a cold-chain biologic pre-filled syringe."
+  },
+  "seed": 42,
+  "notes": "SECOND VERTICAL — proves Faultline is config-driven, not hardcoded to food & beverage (impl plan §1.13). Unlike company_profile.json (which references the canonical food fixtures in contracts/fixtures/), this pharma profile is SELF-CONTAINED: it carries its full entity graph inline under `entities` (same $defs shapes — supplier/product/component/bom_edge/graph_edge/inventory_item) because the frozen contracts/fixtures/ are food-only and Session G may not add to contracts/. A config-driven seed_generator consumes `entities` when present, else falls back to fixtures. Inventory is intentionally tight on the two single-source API chains and the cold-chain. Disruptable chains sit at real lat/lon in event-prone regions (Hyderabad floods, Zhejiang typhoons, Memphis ice storms). Validate with: python -m agents.depth.verify_pharma",
+  "entities": {
+    "components": [
+      { "component_id": "cmp-api-oncovera", "name": "Oncovera API (cytotoxic active substance)", "category": "api", "criticality": "high" },
+      { "component_id": "cmp-api-cardio", "name": "Cardioline API (extended-release active)", "category": "api", "criticality": "high" },
+      { "component_id": "cmp-mab-substance", "name": "Immunova monoclonal antibody drug substance", "category": "api", "criticality": "high" },
+      { "component_id": "cmp-excipient-mannitol", "name": "Mannitol (parenteral-grade excipient)", "category": "excipient", "criticality": "medium" },
+      { "component_id": "cmp-coldchain-pack", "name": "Validated 2-8C cold-chain shipper + phase-change packs", "category": "coldchain", "criticality": "high" },
+      { "component_id": "cmp-glass-vial", "name": "Type I borosilicate vial / syringe barrel", "category": "packaging", "criticality": "medium" },
+      { "component_id": "cmp-tablet-coating", "name": "Functional extended-release film coating", "category": "excipient", "criticality": "low" }
+    ],
+    "products": [
+      { "product_id": "prd-onco-injectable", "name": "Oncovera Sterile Injectable (50 mg vial)", "line": "oncology", "monthly_revenue_usd": 2400000, "daily_demand_units": 8500, "unit": "vial" },
+      { "product_id": "prd-cardio-tablet", "name": "Cardioline Extended-Release Tablet", "line": "cardiology", "monthly_revenue_usd": 1300000, "daily_demand_units": 120000, "unit": "tablet" },
+      { "product_id": "prd-biologic-prefill", "name": "Immunova Pre-Filled Syringe (biologic)", "line": "immunology", "monthly_revenue_usd": 3100000, "daily_demand_units": 6000, "unit": "syringe" }
+    ],
+    "suppliers": [
+      { "supplier_id": "sup-hyderabad-api", "name": "Deccan Active Pharma Ltd", "tier": 3, "location": { "lat": 17.385, "lon": 78.4867 }, "country": "IN", "region": "south-asia", "components": ["cmp-api-oncovera"], "alternate_for": [], "certifications": ["WHO-GMP", "USFDA", "ISO9001"], "lead_time_days": 21, "capacity": "high", "profile_semantic": "WHO-GMP / US-FDA registered active pharmaceutical ingredient plant in the Genome Valley cluster near Hyderabad, India. Sole-source manufacturer of Meridian's Oncovera cytotoxic API. Low-lying site exposed to monsoon flooding of the Musi river basin." },
+      { "supplier_id": "sup-vizag-api", "name": "Vizag Synthesis Pvt Ltd", "tier": 3, "location": { "lat": 17.6868, "lon": 83.2185 }, "country": "IN", "region": "south-asia", "components": ["cmp-api-oncovera"], "alternate_for": ["cmp-api-oncovera"], "certifications": ["WHO-GMP", "USFDA"], "lead_time_days": 18, "expedited_lead_time_days": 12, "capacity": "medium", "profile_semantic": "US-FDA registered fine-chemical and cytotoxic API manufacturer in Visakhapatnam, India. Qualified second source for the Oncovera active with a containment suite suited to cytotoxics; expedited dispatch via Chennai air freight." },
+      { "supplier_id": "sup-zhejiang-api", "name": "Taizhou Hua'an Pharmaceutical Co.", "tier": 3, "location": { "lat": 28.6563, "lon": 121.4205 }, "country": "CN", "region": "east-asia", "components": ["cmp-api-cardio"], "alternate_for": [], "certifications": ["GMP", "USFDA"], "lead_time_days": 28, "capacity": "high", "profile_semantic": "Large-volume cardiovascular API producer in the Taizhou chemical zone, Zhejiang, China. Sole source of the Cardioline extended-release active. Coastal site on the East China Sea typhoon track, with periodic regulatory inspection holds." },
+      { "supplier_id": "sup-singapore-api", "name": "Jurong Pharma Synthesis Pte Ltd", "tier": 3, "location": { "lat": 1.2966, "lon": 103.7764 }, "country": "SG", "region": "southeast-asia", "components": ["cmp-api-cardio"], "alternate_for": ["cmp-api-cardio"], "certifications": ["GMP", "USFDA", "ISO9001"], "lead_time_days": 20, "expedited_lead_time_days": 14, "capacity": "medium", "profile_semantic": "Specialty active pharmaceutical ingredient manufacturer on Jurong Island, Singapore. Qualified alternate for the Cardioline ER active with strong regulatory track record and reliable Changi air logistics." },
+      { "supplier_id": "sup-cork-mab", "name": "Lee Valley Biologics Ltd", "tier": 3, "location": { "lat": 51.8985, "lon": -8.4756 }, "country": "IE", "region": "western-europe", "components": ["cmp-mab-substance"], "alternate_for": [], "certifications": ["EU-GMP", "USFDA"], "lead_time_days": 35, "capacity": "high", "profile_semantic": "Mammalian-cell biomanufacturing CMO near Cork, Ireland, producing the Immunova monoclonal antibody drug substance by perfusion culture. Single qualified source; long campaign lead times and strict cold-chain handling from bulk drug substance onward." },
+      { "supplier_id": "sup-basel-mab", "name": "Rheinfelden Bioworks AG", "tier": 3, "location": { "lat": 47.5596, "lon": 7.5886 }, "country": "CH", "region": "western-europe", "components": ["cmp-mab-substance"], "alternate_for": ["cmp-mab-substance"], "certifications": ["EU-GMP", "USFDA"], "lead_time_days": 30, "capacity": "medium", "profile_semantic": "Biologics contract manufacturer near Basel, Switzerland. Qualified alternate for the Immunova drug substance with a comparable cell line and tech-transfer package already on file." },
+      { "supplier_id": "sup-jena-vial", "name": "Saale Glaswerk GmbH", "tier": 2, "location": { "lat": 50.9272, "lon": 11.5892 }, "country": "DE", "region": "western-europe", "components": ["cmp-glass-vial"], "alternate_for": [], "certifications": ["ISO15378", "ISO9001"], "lead_time_days": 16, "capacity": "high", "profile_semantic": "Type I borosilicate pharmaceutical glass converter in Jena, Germany, producing vials and pre-fillable syringe barrels. Sole qualified supplier feeding both sterile products; a single-site chokepoint for the injectable and the biologic." },
+      { "supplier_id": "sup-mumbai-vial", "name": "Konkan Glass Containers Pvt Ltd", "tier": 2, "location": { "lat": 19.076, "lon": 72.8777 }, "country": "IN", "region": "south-asia", "components": ["cmp-glass-vial"], "alternate_for": ["cmp-glass-vial"], "certifications": ["ISO15378"], "lead_time_days": 14, "capacity": "medium", "profile_semantic": "Pharmaceutical Type I glass vial maker near Mumbai, India. Qualified alternate for borosilicate vials with shorter lead time but more limited high-grade capacity." },
+      { "supplier_id": "sup-darmstadt-excip", "name": "Hessen Fine Excipients GmbH", "tier": 2, "location": { "lat": 49.8728, "lon": 8.6512 }, "country": "DE", "region": "western-europe", "components": ["cmp-excipient-mannitol"], "alternate_for": [], "certifications": ["EU-GMP", "ISO9001"], "lead_time_days": 10, "capacity": "high", "profile_semantic": "Parenteral-grade excipient producer in Darmstadt, Germany, supplying pharmacopeia mannitol for the lyophilized injectable. Reliable EU logistics and deep buffer stock." },
+      { "supplier_id": "sup-coldchain-hub", "name": "Aerocold Logistics LLC", "tier": 2, "location": { "lat": 35.0421, "lon": -89.9792 }, "country": "US", "region": "north-america", "components": ["cmp-coldchain-pack"], "alternate_for": [], "certifications": ["GDP", "ISO9001"], "lead_time_days": 7, "capacity": "high", "profile_semantic": "Validated 2-8C cold-chain packaging and forwarding hub at the Memphis air-cargo superhub, US. Assembles phase-change shippers for the biologic; throughput concentrates through one airport exposed to winter ice storms and spring tornadoes." },
+      { "supplier_id": "sup-coldchain-eu", "name": "Zaventem Cold Pharma BV", "tier": 2, "location": { "lat": 50.9014, "lon": 4.4844 }, "country": "BE", "region": "western-europe", "components": ["cmp-coldchain-pack"], "alternate_for": ["cmp-coldchain-pack"], "certifications": ["GDP"], "lead_time_days": 9, "capacity": "medium", "profile_semantic": "GDP-certified cold-chain packaging provider at Brussels Airport, Belgium. Qualified alternate cold-chain lane for the biologic, decoupled from the US weather exposure." },
+      { "supplier_id": "sup-coating-nj", "name": "Raritan Coatings Inc", "tier": 2, "location": { "lat": 40.4862, "lon": -74.4518 }, "country": "US", "region": "north-america", "components": ["cmp-tablet-coating"], "alternate_for": [], "certifications": ["USFDA"], "lead_time_days": 8, "capacity": "high", "profile_semantic": "Functional film-coating supplier in New Brunswick, New Jersey, providing the extended-release coating system for the Cardioline tablet." },
+      { "supplier_id": "sup-fillfinish-ie", "name": "Liffey Sterile Fill-Finish Ltd", "tier": 1, "location": { "lat": 53.3498, "lon": -6.2603 }, "country": "IE", "region": "western-europe", "components": ["cmp-api-oncovera", "cmp-mab-substance", "cmp-excipient-mannitol", "cmp-glass-vial", "cmp-coldchain-pack"], "alternate_for": [], "certifications": ["EU-GMP", "USFDA"], "lead_time_days": 5, "capacity": "high", "profile_semantic": "Tier-1 sterile fill-finish CMO in Dublin, Ireland. Lyophilizes and fills the Oncovera injectable and fills/inspects the Immunova pre-filled syringe; receives API, drug substance, mannitol, vials and cold-chain materials." },
+      { "supplier_id": "sup-tabletmfg-goa", "name": "Mandovi Pharma Manufacturing Pvt Ltd", "tier": 1, "location": { "lat": 15.2993, "lon": 74.124 }, "country": "IN", "region": "south-asia", "components": ["cmp-api-cardio", "cmp-tablet-coating"], "alternate_for": [], "certifications": ["WHO-GMP", "USFDA"], "lead_time_days": 6, "capacity": "high", "profile_semantic": "Tier-1 oral solid dose manufacturer in Goa, India, granulating, compressing and coating the Cardioline extended-release tablet from imported API and coating system." }
+    ],
+    "bom": [
+      { "parent_type": "product", "parent_id": "prd-onco-injectable", "component_id": "cmp-api-oncovera", "qty_per_unit": 0.00005, "unit": "kg" },
+      { "parent_type": "product", "parent_id": "prd-onco-injectable", "component_id": "cmp-excipient-mannitol", "qty_per_unit": 0.04, "unit": "kg" },
+      { "parent_type": "product", "parent_id": "prd-onco-injectable", "component_id": "cmp-glass-vial", "qty_per_unit": 1, "unit": "vial" },
+      { "parent_type": "product", "parent_id": "prd-cardio-tablet", "component_id": "cmp-api-cardio", "qty_per_unit": 0.00008, "unit": "kg" },
+      { "parent_type": "product", "parent_id": "prd-cardio-tablet", "component_id": "cmp-tablet-coating", "qty_per_unit": 0.0015, "unit": "kg" },
+      { "parent_type": "product", "parent_id": "prd-biologic-prefill", "component_id": "cmp-mab-substance", "qty_per_unit": 0.00015, "unit": "kg" },
+      { "parent_type": "product", "parent_id": "prd-biologic-prefill", "component_id": "cmp-coldchain-pack", "qty_per_unit": 0.02, "unit": "pack" },
+      { "parent_type": "product", "parent_id": "prd-biologic-prefill", "component_id": "cmp-glass-vial", "qty_per_unit": 1, "unit": "barrel" }
+    ],
+    "supplier_graph": [
+      { "edge_id": "edg-ph-001", "src_id": "sup-hyderabad-api", "dst_id": "sup-fillfinish-ie", "dst_type": "supplier", "component_id": "cmp-api-oncovera", "relation": "supplies" },
+      { "edge_id": "edg-ph-002", "src_id": "sup-darmstadt-excip", "dst_id": "sup-fillfinish-ie", "dst_type": "supplier", "component_id": "cmp-excipient-mannitol", "relation": "supplies" },
+      { "edge_id": "edg-ph-003", "src_id": "sup-jena-vial", "dst_id": "sup-fillfinish-ie", "dst_type": "supplier", "component_id": "cmp-glass-vial", "relation": "supplies" },
+      { "edge_id": "edg-ph-004", "src_id": "sup-fillfinish-ie", "dst_id": "prd-onco-injectable", "dst_type": "product", "component_id": "cmp-api-oncovera", "relation": "supplies" },
+      { "edge_id": "edg-ph-005", "src_id": "sup-cork-mab", "dst_id": "sup-fillfinish-ie", "dst_type": "supplier", "component_id": "cmp-mab-substance", "relation": "supplies" },
+      { "edge_id": "edg-ph-006", "src_id": "sup-coldchain-hub", "dst_id": "sup-fillfinish-ie", "dst_type": "supplier", "component_id": "cmp-coldchain-pack", "relation": "supplies", "route_via": "Memphis Intl air cargo" },
+      { "edge_id": "edg-ph-007", "src_id": "sup-fillfinish-ie", "dst_id": "prd-biologic-prefill", "dst_type": "product", "component_id": "cmp-mab-substance", "relation": "supplies" },
+      { "edge_id": "edg-ph-008", "src_id": "sup-fillfinish-ie", "dst_id": "prd-biologic-prefill", "dst_type": "product", "component_id": "cmp-coldchain-pack", "relation": "supplies" },
+      { "edge_id": "edg-ph-009", "src_id": "sup-zhejiang-api", "dst_id": "sup-tabletmfg-goa", "dst_type": "supplier", "component_id": "cmp-api-cardio", "relation": "supplies" },
+      { "edge_id": "edg-ph-010", "src_id": "sup-coating-nj", "dst_id": "sup-tabletmfg-goa", "dst_type": "supplier", "component_id": "cmp-tablet-coating", "relation": "supplies" },
+      { "edge_id": "edg-ph-011", "src_id": "sup-tabletmfg-goa", "dst_id": "prd-cardio-tablet", "dst_type": "product", "component_id": "cmp-api-cardio", "relation": "supplies" }
+    ],
+    "inventory": [
+      { "product_id": "prd-onco-injectable", "component_id": "cmp-api-oncovera", "on_hand_units": 3.4, "daily_consumption_units": 0.425, "unit": "kg", "days_of_cover": 8, "as_of": "2026-06-10T06:00:00Z" },
+      { "product_id": "prd-onco-injectable", "component_id": "cmp-glass-vial", "on_hand_units": 127500, "daily_consumption_units": 8500, "unit": "vial", "days_of_cover": 15, "as_of": "2026-06-10T06:00:00Z" },
+      { "product_id": "prd-onco-injectable", "component_id": "cmp-excipient-mannitol", "on_hand_units": 13600, "daily_consumption_units": 340, "unit": "kg", "days_of_cover": 40, "as_of": "2026-06-10T06:00:00Z" },
+      { "product_id": "prd-cardio-tablet", "component_id": "cmp-api-cardio", "on_hand_units": 115.2, "daily_consumption_units": 9.6, "unit": "kg", "days_of_cover": 12, "as_of": "2026-06-10T06:00:00Z" },
+      { "product_id": "prd-cardio-tablet", "component_id": "cmp-tablet-coating", "on_hand_units": 9000, "daily_consumption_units": 180, "unit": "kg", "days_of_cover": 50, "as_of": "2026-06-10T06:00:00Z" },
+      { "product_id": "prd-biologic-prefill", "component_id": "cmp-mab-substance", "on_hand_units": 18, "daily_consumption_units": 0.9, "unit": "kg", "days_of_cover": 20, "as_of": "2026-06-10T06:00:00Z" },
+      { "product_id": "prd-biologic-prefill", "component_id": "cmp-coldchain-pack", "on_hand_units": 1080, "daily_consumption_units": 120, "unit": "pack", "days_of_cover": 9, "as_of": "2026-06-10T06:00:00Z" },
+      { "product_id": "prd-biologic-prefill", "component_id": "cmp-glass-vial", "on_hand_units": 90000, "daily_consumption_units": 6000, "unit": "barrel", "days_of_cover": 15, "as_of": "2026-06-10T06:00:00Z" }
+    ]
+  },
+  "disruptable_chains": [
+    {
+      "name": "oncovera-api",
+      "story": "Single WHO-GMP cytotoxic API plant in flood-prone Hyderabad to Dublin sterile fill-finish to the oncology injectable",
+      "chokepoint": "sup-hyderabad-api",
+      "products": ["prd-onco-injectable"],
+      "tight_cover_days": { "prd-onco-injectable": 8 }
+    },
+    {
+      "name": "cardio-api",
+      "story": "Sole API source in typhoon-exposed Taizhou, Zhejiang to Goa tablet manufacturing to the extended-release tablet",
+      "chokepoint": "sup-zhejiang-api",
+      "products": ["prd-cardio-tablet"],
+      "tight_cover_days": { "prd-cardio-tablet": 12 }
+    },
+    {
+      "name": "cold-chain",
+      "story": "2-8C biologic drug substance routed through the ice-storm-exposed Memphis air-cargo hub to the pre-filled syringe",
+      "chokepoint": "sup-coldchain-hub",
+      "products": ["prd-biologic-prefill"],
+      "tight_cover_days": { "prd-biologic-prefill": 9 }
+    },
+    {
+      "name": "glass-vial",
+      "story": "Sole-source Type I borosilicate vials from Jena feed both sterile products",
+      "chokepoint": "sup-jena-vial",
+      "products": ["prd-onco-injectable", "prd-biologic-prefill"]
+    }
+  ],
+  "whatif_presets": [
+    { "preset": "hyderabad-flood", "title": "Monsoon flood in Hyderabad API cluster", "event_type": "flood", "location": { "lat": 17.385, "lon": 78.4867 }, "place_name": "Genome Valley, Hyderabad, India", "duration_days": 21, "magnitude": 0.8 },
+    { "preset": "zhejiang-typhoon", "title": "Typhoon hits Taizhou chemical zone", "event_type": "storm", "location": { "lat": 28.6563, "lon": 121.4205 }, "place_name": "Taizhou, Zhejiang, China", "duration_days": 12, "magnitude": 0.75 },
+    { "preset": "memphis-icestorm", "title": "Ice storm grounds Memphis air-cargo hub", "event_type": "storm", "location": { "lat": 35.0421, "lon": -89.9792 }, "place_name": "Memphis, Tennessee, US", "duration_days": 7, "magnitude": 0.6 },
+    { "preset": "jena-fire", "title": "Industrial fire at the Jena glass works", "event_type": "industrial_accident", "location": { "lat": 50.9272, "lon": 11.5892 }, "place_name": "Jena, Germany", "duration_days": 18, "magnitude": 0.7 }
+  ]
+}

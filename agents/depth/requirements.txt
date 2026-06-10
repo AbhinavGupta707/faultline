@@ -1,0 +1,8 @@
+# Depth lane (Session G) optional runtime deps. The lane runs fully offline without
+# these (local NDJSON warehouse, local artifact mirror, dependency-free PDF writer);
+# install them for the real cloud path. Session F: fold into the agent image build.
+google-cloud-bigquery>=3.20   # streaming inserts → faultline.runs/exposures/decisions
+google-cloud-storage>=2.16    # report/PO artifacts → GCS
+reportlab>=4.0                # nicer brief PDFs (fallback writer used if absent)
+# google-genai is already pinned by agents/requirements.txt (Briefer/Enricher LLM path,
+# both optional and off by default: BRIEFER_LLM / ENRICH_LLM).
