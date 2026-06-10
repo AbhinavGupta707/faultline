@@ -1,5 +1,6 @@
+# voice_gateway runtime deps (Cloud Run image)
 fastapi
 uvicorn[standard]
-google-genai
+google-genai          # Gemini Live API on Vertex (live mode only; lazy-imported)
 websockets
-pytest
+# tests (test_gateway.py, spike.py) additionally need: httpx, jsonschema, pytest
