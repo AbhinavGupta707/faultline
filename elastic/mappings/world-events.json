@@ -3,17 +3,17 @@
     "properties": {
       "id": { "type": "keyword" },
       "source": { "type": "keyword" },
-      "title": { "type": "text" },
-      "summary": { "type": "text" },
+      "title": { "type": "text", "copy_to": "event_semantic" },
+      "summary": { "type": "text", "copy_to": "event_semantic" },
       "event_type": { "type": "keyword" },
       "location": { "type": "geo_point" },
-      "place_name": { "type": "text" },
+      "place_name": { "type": "text", "copy_to": "event_semantic" },
       "region": { "type": "keyword" },
       "severity_raw": { "type": "float" },
       "published_at": { "type": "date" },
       "url": { "type": "keyword" },
       "simulated": { "type": "boolean" },
-      "event_semantic": { "type": "semantic_text" }
+      "event_semantic": { "type": "semantic_text", "inference_id": ".elser-2-elasticsearch" }
     }
   }
 }

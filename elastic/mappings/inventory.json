@@ -7,7 +7,9 @@
       "daily_consumption_units": { "type": "float" },
       "unit": { "type": "keyword" },
       "days_of_cover": { "type": "float" },
-      "as_of": { "type": "date" }
+      "as_of": { "type": "date" },
+      "product_name": { "type": "keyword" },
+      "monthly_revenue_usd": { "type": "float" }
     }
   }
 }

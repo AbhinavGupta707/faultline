@@ -1,0 +1,15 @@
+{
+  "mappings": {
+    "properties": {
+      "path_id": { "type": "keyword" },
+      "root_supplier_id": { "type": "keyword" },
+      "supplier_chain_json": { "type": "keyword", "index": false },
+      "component_id": { "type": "keyword" },
+      "component_name": { "type": "keyword" },
+      "product_id": { "type": "keyword" },
+      "product_name": { "type": "keyword" },
+      "hops": { "type": "integer" },
+      "route_via": { "type": "keyword" }
+    }
+  }
+}
