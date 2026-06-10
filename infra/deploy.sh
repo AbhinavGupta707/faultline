@@ -127,8 +127,13 @@ if want web; then
     VITE_DEMO_MODE="${VITE_DEMO_MODE:-replay}" \
     npm run build )
   echo "==> firebase deploy"
-  npx --yes firebase-tools deploy --only hosting --project "$PROJECT" --non-interactive
-  echo "    web → https://${PROJECT}.web.app"
+  if npx --yes firebase-tools deploy --only hosting --project "$PROJECT" --non-interactive; then
+    echo "    web → https://${PROJECT}.web.app"
+  else
+    echo "WARN: firebase deploy FAILED — if the error is 403/addFirebase, a human must visit"
+    echo "      https://console.firebase.google.com once (accept ToS, add project ${PROJECT});"
+    echo "      then re-run: bash infra/deploy.sh web   — continuing with remaining targets."
+  fi
 fi
 
 # ── Cloud Scheduler: feed_ingest every 5 min ────────────────────────────────
