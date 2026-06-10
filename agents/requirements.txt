@@ -3,6 +3,7 @@ uvicorn[standard]
 pydantic>=2
 google-adk
 google-genai
+mcp
 jsonschema
 pytest
 httpx

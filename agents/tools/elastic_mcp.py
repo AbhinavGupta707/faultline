@@ -150,3 +150,25 @@ def build_adk_toolset():
         ),
         tool_filter=ELASTIC_TOOL_NAMES,
     )
+
+
+if __name__ == "__main__":
+    # S1 readiness probe: `KIBANA_URL=… ELASTIC_API_KEY=… python -m agents.tools.elastic_mcp`
+    # Lists the tools published at the MCP endpoint, flags contract-name mismatches,
+    # and runs one search_events round-trip.
+    async def _probe() -> None:
+        print(f"probing {_mcp_endpoint()} …")
+        tools = await _mcp_list_tools()
+        names = [t.name for t in tools]
+        print(f"{len(names)} tools published: {names}")
+        missing = [n for n in ELASTIC_TOOL_NAMES if n not in names]
+        if missing:
+            print(f"⚠ contract tools NOT found under their bare names: {missing}")
+            print("  → if Agent Builder namespaces ids, map them in _mcp_call().")
+        else:
+            print("✓ all six contract tool names match")
+        out = await _mcp_call("search_events", {"query": "flood", "size": 3})
+        print(f"✓ search_events returned {len(out.get('events', []))} events "
+              f"(total={out.get('total')})")
+
+    asyncio.run(_probe())
