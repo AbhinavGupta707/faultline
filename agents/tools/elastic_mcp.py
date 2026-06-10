@@ -1,9 +1,29 @@
-"""Elastic MCP wiring — McpToolset against {KIBANA_URL}/api/agent_builder/mcp.
+"""Elastic tool dispatch — mock (fixtures) or live (Agent Builder MCP server).
 
-Phase 0 stub — Session B implements per impl plan §3.3: the McpToolset + a thin logging
-wrapper that publishes every call onto the WS as `tool.call` with elastic:true.
-ELASTIC_MODE=mock must route to agents/mocks/elastic_fake.py with identical signatures.
+Two things live here (impl plan §3.3):
+
+1. `ToolBelt` — the narrated dispatcher the pipeline uses. EVERY call publishes
+   `tool.call` messages on the bus (Elastic MCP tools flagged elastic:true so the
+   UI renders the distinct chip). ELASTIC_MODE=mock routes to
+   agents/mocks/elastic_fake.py (identical names/signatures); live routes to
+   {KIBANA_URL}/api/agent_builder/mcp over streamable HTTP.
+2. `build_adk_toolset()` — the documented ADK McpToolset wiring, for running the
+   agents as ADK LlmAgents against the same endpoint.
+
+write_decision follows the contract's fast-call rule: a single status:"ok"
+message with no preceding "start".
 """
+from __future__ import annotations
+
+import asyncio
+import json
+import time
+import uuid
+from typing import Any, Awaitable, Callable, Optional
+
+from agents import config
+from agents.bus import Bus
+from agents.mocks import elastic_fake
 
 ELASTIC_TOOL_NAMES = [
     "search_events",
@@ -13,3 +33,120 @@ ELASTIC_TOOL_NAMES = [
     "find_alternate_suppliers",
     "write_decision",
 ]
+
+# Tools that pair start/ok on the UI; write_decision is a fast single-ok call.
+_FAST_TOOLS = {"write_decision"}
+
+
+class ToolError(RuntimeError):
+    pass
+
+
+class ToolBelt:
+    def __init__(self, bus: Bus) -> None:
+        self.bus = bus
+        self._local_tools: dict[str, Callable[..., Awaitable[dict]]] = {}
+
+    def register_local(self, name: str, fn: Callable[..., Awaitable[dict]]) -> None:
+        """Non-Elastic tools (e.g. generate_po_pdf) still narrate via tool.call."""
+        self._local_tools[name] = fn
+
+    async def call(self, *, run_id: str, agent: str, tool: str, args: dict,
+                   args_summary: str) -> dict:
+        elastic = tool in ELASTIC_TOOL_NAMES
+        call_id = f"tc-{uuid.uuid4().hex[:8]}"
+        if tool not in _FAST_TOOLS:
+            self.bus.tool_call(run_id, call_id=call_id, agent=agent, tool=tool,
+                               args_summary=args_summary, status="start", elastic=elastic)
+        t0 = time.perf_counter()
+        try:
+            result = await self._dispatch(tool, args)
+        except Exception as exc:
+            self.bus.tool_call(run_id, call_id=call_id, agent=agent, tool=tool,
+                               args_summary=args_summary, status="err", elastic=elastic,
+                               latency_ms=(time.perf_counter() - t0) * 1000, error=str(exc)[:300])
+            raise ToolError(f"{tool} failed: {exc}") from exc
+        self.bus.tool_call(run_id, call_id=call_id, agent=agent, tool=tool,
+                           args_summary=args_summary, status="ok", elastic=elastic,
+                           latency_ms=(time.perf_counter() - t0) * 1000)
+        return result
+
+    async def quiet_call(self, tool: str, args: dict) -> dict:
+        """Un-narrated dispatch — control-loop polling only, never inside a run."""
+        return await self._dispatch(tool, args)
+
+    async def healthcheck(self) -> bool:
+        if config.elastic_mode() == "mock":
+            return True
+        try:
+            tools = await asyncio.wait_for(_mcp_list_tools(), timeout=5)
+            return len(tools) > 0
+        except Exception:
+            return False
+
+    async def _dispatch(self, tool: str, args: dict) -> dict:
+        if tool in self._local_tools:
+            return await self._local_tools[tool](args)
+        if tool not in ELASTIC_TOOL_NAMES:
+            raise ToolError(f"unknown tool: {tool}")
+        if config.elastic_mode() == "mock":
+            fn = getattr(elastic_fake, tool)
+            return fn(**args)
+        return await _mcp_call(tool, args)
+
+
+# ── live MCP plumbing (lazy imports — mock mode has zero cloud deps) ─────────
+def _mcp_endpoint() -> str:
+    base = config.kibana_url()
+    if not base:
+        raise ToolError("KIBANA_URL not set — cannot use ELASTIC_MODE=live")
+    return f"{base}/api/agent_builder/mcp"
+
+
+def _mcp_headers() -> dict[str, str]:
+    return {"Authorization": f"ApiKey {config.elastic_api_key()}"}
+
+
+async def _mcp_call(tool: str, args: dict) -> dict:
+    from mcp import ClientSession
+    from mcp.client.streamable_http import streamablehttp_client
+
+    async with streamablehttp_client(_mcp_endpoint(), headers=_mcp_headers()) as (read, write, _):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            result = await session.call_tool(tool, args)
+            if result.isError:
+                raise ToolError(f"MCP error from {tool}: {result.content}")
+            # Agent Builder returns JSON in the first text content block.
+            for block in result.content:
+                if getattr(block, "type", "") == "text":
+                    return json.loads(block.text)
+            structured = getattr(result, "structuredContent", None)
+            if structured:
+                return structured
+            raise ToolError(f"{tool} returned no parsable content")
+
+
+async def _mcp_list_tools() -> list:
+    from mcp import ClientSession
+    from mcp.client.streamable_http import streamablehttp_client
+
+    async with streamablehttp_client(_mcp_endpoint(), headers=_mcp_headers()) as (read, write, _):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            listed = await session.list_tools()
+            return listed.tools
+
+
+def build_adk_toolset():
+    """Impl plan §3.3 snippet — McpToolset for running agents as ADK LlmAgents."""
+    from google.adk.tools.mcp_tool.mcp_session_manager import StreamableHTTPConnectionParams
+    from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
+
+    return McpToolset(
+        connection_params=StreamableHTTPConnectionParams(
+            url=_mcp_endpoint(),
+            headers=_mcp_headers(),
+        ),
+        tool_filter=ELASTIC_TOOL_NAMES,
+    )
