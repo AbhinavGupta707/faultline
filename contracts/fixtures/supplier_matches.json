@@ -1,0 +1,40 @@
+{
+  "matches": [
+    {
+      "supplier": {
+        "supplier_id": "sup-vadodara-chem",
+        "name": "Vadodara Specialty Chemicals Pvt Ltd",
+        "tier": 3,
+        "location": { "lat": 22.3072, "lon": 73.1812 },
+        "country": "IN",
+        "region": "south-asia",
+        "components": ["cmp-emulsifier"],
+        "alternate_for": [],
+        "certifications": ["FSSC22000", "ISO9001"],
+        "lead_time_days": 14,
+        "capacity": "high",
+        "profile_semantic": "Specialty chemical plant in the GIDC industrial estates of Vadodara, Gujarat, India. Manufactures food-grade emulsifier blends (E471 mono- and diglycerides with E414 gum acacia) for beverage and bakery applications. Sole-source producer of Northwind Provisions' emulsifier feedstock. Monsoon-flood-prone low-lying estate."
+      },
+      "score": 0.92,
+      "signals": { "semantic_score": 0.88, "bm25_score": 14.2, "geo_distance_km": 6.4 }
+    },
+    {
+      "supplier": {
+        "supplier_id": "sup-mumbai-blend",
+        "name": "Asha Food Ingredients Ltd",
+        "tier": 1,
+        "location": { "lat": 19.033, "lon": 73.0297 },
+        "country": "IN",
+        "region": "south-asia",
+        "components": ["cmp-emulsifier"],
+        "alternate_for": [],
+        "certifications": ["FSSC22000"],
+        "lead_time_days": 7,
+        "capacity": "medium",
+        "profile_semantic": "Tier-1 ingredient blender in Navi Mumbai, India, compounding emulsifier systems and dry-blend premixes for granola and snack-bar production lines. Receives emulsifier feedstock from Gujarat by road."
+      },
+      "score": 0.31,
+      "signals": { "semantic_score": 0.42, "bm25_score": 3.1, "geo_distance_km": 418.0 }
+    }
+  ]
+}

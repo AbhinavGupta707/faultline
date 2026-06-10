@@ -1,0 +1,16 @@
+[
+  { "edge_id": "edg-001", "src_id": "sup-vadodara-chem", "dst_id": "sup-mumbai-blend", "dst_type": "supplier", "component_id": "cmp-emulsifier", "relation": "supplies" },
+  { "edge_id": "edg-002", "src_id": "sup-vadodara-chem", "dst_id": "sup-rotterdam-blend", "dst_type": "supplier", "component_id": "cmp-emulsifier", "relation": "supplies" },
+  { "edge_id": "edg-003", "src_id": "sup-mumbai-blend", "dst_id": "prd-granola-bar", "dst_type": "product", "component_id": "cmp-emulsifier", "relation": "supplies" },
+  { "edge_id": "edg-004", "src_id": "sup-rotterdam-blend", "dst_id": "prd-sparkling-botanical", "dst_type": "product", "component_id": "cmp-emulsifier", "relation": "supplies" },
+  { "edge_id": "edg-005", "src_id": "sup-minas-coop", "dst_id": "sup-portland-roast", "dst_type": "supplier", "component_id": "cmp-coffee-arabica", "relation": "supplies" },
+  { "edge_id": "edg-006", "src_id": "sup-portland-roast", "dst_id": "prd-coldbrew-12oz", "dst_type": "product", "component_id": "cmp-coffee-arabica", "relation": "supplies" },
+  { "edge_id": "edg-007", "src_id": "sup-bahrain-smelt", "dst_id": "sup-ulsan-mill", "dst_type": "supplier", "component_id": "cmp-alu-can", "relation": "supplies" },
+  { "edge_id": "edg-008", "src_id": "sup-ulsan-mill", "dst_id": "sup-stockton-cans", "dst_type": "supplier", "component_id": "cmp-alu-can", "relation": "supplies", "route_via": "Port of Busan" },
+  { "edge_id": "edg-009", "src_id": "sup-stockton-cans", "dst_id": "prd-coldbrew-12oz", "dst_type": "product", "component_id": "cmp-alu-can", "relation": "supplies" },
+  { "edge_id": "edg-010", "src_id": "sup-stockton-cans", "dst_id": "prd-sparkling-botanical", "dst_type": "product", "component_id": "cmp-alu-can", "relation": "supplies" },
+  { "edge_id": "edg-011", "src_id": "sup-gulf-petchem", "dst_id": "prd-granola-bar", "dst_type": "product", "component_id": "cmp-pet-film", "relation": "supplies" },
+  { "edge_id": "edg-012", "src_id": "sup-saskatoon-oats", "dst_id": "prd-granola-bar", "dst_type": "product", "component_id": "cmp-oats", "relation": "supplies" },
+  { "edge_id": "edg-013", "src_id": "sup-grasse-botanicals", "dst_id": "sup-rotterdam-blend", "dst_type": "supplier", "component_id": "cmp-botanical-extract", "relation": "supplies" },
+  { "edge_id": "edg-014", "src_id": "sup-rotterdam-blend", "dst_id": "prd-sparkling-botanical", "dst_type": "product", "component_id": "cmp-botanical-extract", "relation": "supplies" }
+]

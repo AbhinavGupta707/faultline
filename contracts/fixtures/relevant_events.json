@@ -1,0 +1,34 @@
+{
+  "considered_count": 14,
+  "window": { "from": "2026-06-10T08:00:00Z", "to": "2026-06-10T09:00:00Z" },
+  "events": [
+    {
+      "event_id": "evt-gdacs-flood-guj-20260610",
+      "title": "Severe flooding in Vadodara district, Gujarat — industrial estates inundated after record monsoon rainfall",
+      "source": "gdacs",
+      "event_type": "flood",
+      "severity_raw": 0.78,
+      "location": { "lat": 22.31, "lon": 73.18 },
+      "place_name": "Vadodara, Gujarat, India",
+      "published_at": "2026-06-10T08:42:00Z",
+      "url": "https://www.gdacs.org/report.aspx?eventid=FL1062026",
+      "simulated": false,
+      "why_relevant": "Flooded GIDC industrial estates in Vadodara are home to the sole-source plant producing Northwind's food-grade emulsifier blend; the report explicitly mentions production halts at chemical plants.",
+      "supplier_hints": ["sup-vadodara-chem"]
+    },
+    {
+      "event_id": "evt-noaa-storm-gulf-20260610",
+      "title": "Tropical Storm Warning — Tropical Storm Delia approaching the southwest Louisiana coast",
+      "source": "noaa",
+      "event_type": "storm",
+      "severity_raw": 0.52,
+      "location": { "lat": 29.7604, "lon": -93.3 },
+      "place_name": "Cameron Parish, Louisiana, United States",
+      "published_at": "2026-06-10T03:00:00Z",
+      "url": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.delia.2026",
+      "simulated": false,
+      "why_relevant": "The warning area covers the Lake Charles petrochemical corridor where Pelican Polymer Films extrudes the packaging film for the granola-bar line; precautionary shutdowns are already underway.",
+      "supplier_hints": ["sup-gulf-petchem"]
+    }
+  ]
+}

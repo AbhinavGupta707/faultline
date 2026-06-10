@@ -1,0 +1,48 @@
+{
+  "exposure_id": "exp-granola-emuls",
+  "component_id": "cmp-emulsifier",
+  "recommended_supplier_id": "sup-jurong-chem",
+  "alternates": [
+    {
+      "supplier_id": "sup-jurong-chem",
+      "name": "Jurong Fine Ingredients Pte Ltd",
+      "tier": 3,
+      "location": { "lat": 1.3161, "lon": 103.6957 },
+      "country": "SG",
+      "lead_time_days": 11,
+      "expedited_lead_time_days": 7,
+      "capacity": "high",
+      "certifications": ["FSSC22000", "Halal", "Kosher"],
+      "match_score": 0.91,
+      "est_unit_cost_usd": 4.85,
+      "rationale": "Direct equivalent E471/E414 beverage blend, FSSC 22000 like-for-like, finished-goods buffer stock on hand, and a 7-day expedited air option from Changi that beats the 9-day cover window."
+    },
+    {
+      "supplier_id": "sup-guadalajara-ing",
+      "name": "Ingredientes Occidente S.A. de C.V.",
+      "tier": 3,
+      "location": { "lat": 20.6597, "lon": -103.3496 },
+      "country": "MX",
+      "lead_time_days": 9,
+      "expedited_lead_time_days": 6,
+      "capacity": "low",
+      "certifications": ["FSSC22000"],
+      "match_score": 0.74,
+      "est_unit_cost_usd": 4.6,
+      "rationale": "Fastest standard lead time, but low spare capacity makes a 12 t order risky and there is no Halal/Kosher coverage for the sparkling line's export SKUs."
+    },
+    {
+      "supplier_id": "sup-lyon-emuls",
+      "name": "Provence Lipides SAS",
+      "tier": 3,
+      "location": { "lat": 45.764, "lon": 4.8357 },
+      "country": "FR",
+      "lead_time_days": 18,
+      "capacity": "medium",
+      "certifications": ["FSSC22000", "ISO22000"],
+      "match_score": 0.69,
+      "est_unit_cost_usd": 5.4,
+      "rationale": "Strong quality record and ideal for the Rotterdam blender geographically, but an 18-day lead time misses the 9-day cover window for the granola line."
+    }
+  ]
+}

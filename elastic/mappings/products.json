@@ -1,0 +1,12 @@
+{
+  "mappings": {
+    "properties": {
+      "product_id": { "type": "keyword" },
+      "name": { "type": "text" },
+      "line": { "type": "keyword" },
+      "monthly_revenue_usd": { "type": "float" },
+      "daily_demand_units": { "type": "float" },
+      "unit": { "type": "keyword" }
+    }
+  }
+}

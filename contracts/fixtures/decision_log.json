@@ -1,0 +1,104 @@
+[
+  {
+    "decision_id": "dec-20260610-0001",
+    "run_id": "run-2026-06-10-0001",
+    "ts": "2026-06-10T09:00:05.500Z",
+    "agent": "watcher",
+    "kind": "triage",
+    "summary": "2 of 14 fresh world events are relevant to Northwind's supplier graph: Gujarat flooding (sole-source emulsifier plant region) and a Gulf Coast tropical storm (packaging-film supplier).",
+    "evidence_event_ids": ["evt-gdacs-flood-guj-20260610", "evt-noaa-storm-gulf-20260610"],
+    "simulated": false,
+    "related": { "supplier_ids": ["sup-vadodara-chem", "sup-gulf-petchem"] }
+  },
+  {
+    "decision_id": "dec-20260610-0002",
+    "run_id": "run-2026-06-10-0001",
+    "ts": "2026-06-10T09:00:13.200Z",
+    "agent": "tracer",
+    "kind": "trace",
+    "summary": "Gujarat flood maps to Vadodara Specialty Chemicals (hybrid match 0.92, plant 6.4 km from the flood centroid); graph traversal reaches 2 finished products through 2 Tier-1 blenders: Trailpoint Granola Bar and Vela Sparkling Botanicals.",
+    "evidence_event_ids": ["evt-gdacs-flood-guj-20260610"],
+    "simulated": false,
+    "related": {
+      "supplier_ids": ["sup-vadodara-chem", "sup-mumbai-blend", "sup-rotterdam-blend"],
+      "product_ids": ["prd-granola-bar", "prd-sparkling-botanical"],
+      "path_ids": ["path-emuls-granola", "path-emuls-sparkling"],
+      "component_ids": ["cmp-emulsifier"]
+    }
+  },
+  {
+    "decision_id": "dec-20260610-0003",
+    "run_id": "run-2026-06-10-0001",
+    "ts": "2026-06-10T09:00:18.500Z",
+    "agent": "assessor",
+    "kind": "assess",
+    "summary": "Trailpoint Granola Bar is the critical exposure: 9 days of emulsifier cover vs an estimated 21-day disruption — $460,000 of revenue at risk. Vela Sparkling holds 18 days (watch, $95,000 tail). Gulf-storm film exposure fully covered (34 days).",
+    "detail": "dollars_at_risk = daily_revenue × max(0, est_disruption_days − days_of_cover). Granola: $38.3k/day × 12 days. Severity 0.84 (sole source, no qualified second source onboarded, flood still active).",
+    "evidence_event_ids": ["evt-gdacs-flood-guj-20260610", "evt-noaa-storm-gulf-20260610"],
+    "simulated": false,
+    "related": {
+      "exposure_ids": ["exp-granola-emuls", "exp-sparkling-emuls", "exp-granola-film"],
+      "product_ids": ["prd-granola-bar", "prd-sparkling-botanical"]
+    }
+  },
+  {
+    "decision_id": "dec-20260610-0004",
+    "run_id": "run-2026-06-10-0001",
+    "ts": "2026-06-10T09:00:28.600Z",
+    "agent": "orchestrator",
+    "kind": "approval",
+    "summary": "Operator approved re-sourcing emulsifier supply (appr-20260610-7f3a): draft a contingent PO with the best qualified alternate and confirm availability by call.",
+    "evidence_event_ids": ["evt-gdacs-flood-guj-20260610"],
+    "simulated": false,
+    "related": { "approval_id": "appr-20260610-7f3a", "exposure_ids": ["exp-granola-emuls", "exp-sparkling-emuls"] }
+  },
+  {
+    "decision_id": "dec-20260610-0005",
+    "run_id": "run-2026-06-10-0001",
+    "ts": "2026-06-10T09:00:37.400Z",
+    "agent": "resourcer",
+    "kind": "resource",
+    "summary": "Jurong Fine Ingredients selected from 3 qualified alternates (match 0.91; FSSC22000/Halal/Kosher; high capacity; 7-day expedited air). Contingent PO po-2026-0042 drafted: 12,000 kg @ $4.85/kg = $58,200, split air/sea.",
+    "evidence_event_ids": ["evt-gdacs-flood-guj-20260610"],
+    "simulated": false,
+    "related": {
+      "supplier_ids": ["sup-jurong-chem"],
+      "po_id": "po-2026-0042",
+      "exposure_ids": ["exp-granola-emuls"],
+      "component_ids": ["cmp-emulsifier"]
+    }
+  },
+  {
+    "decision_id": "dec-20260610-0006",
+    "run_id": "run-2026-06-10-0001",
+    "ts": "2026-06-10T09:00:58.400Z",
+    "agent": "negotiator",
+    "kind": "negotiate",
+    "summary": "Supplier confirmed on call: 3,000 kg by air arriving 2026-06-17 (7 days), 9,000 kg by sea arriving 2026-06-26; price held at $4.85/kg. Commitment remains contingent on PO status.",
+    "evidence_event_ids": ["evt-gdacs-flood-guj-20260610"],
+    "simulated": false,
+    "related": { "call_id": "call-20260610-01", "po_id": "po-2026-0042", "supplier_ids": ["sup-jurong-chem"] }
+  },
+  {
+    "decision_id": "dec-20260610-0007",
+    "run_id": "run-2026-06-10-0001",
+    "ts": "2026-06-10T09:01:03.500Z",
+    "agent": "verifier",
+    "kind": "verify",
+    "summary": "Coverage gap closed for Trailpoint Granola Bar: confirmed 7-day lead beats 9 days of cover (margin 2 days). Vela Sparkling covered by the sea balance (day 16 < 18 days of cover). Residual risk medium — single qualified alternate until Vadodara restarts.",
+    "evidence_event_ids": ["evt-gdacs-flood-guj-20260610"],
+    "simulated": false,
+    "related": { "exposure_ids": ["exp-granola-emuls", "exp-sparkling-emuls"], "product_ids": ["prd-granola-bar", "prd-sparkling-botanical"] }
+  },
+  {
+    "decision_id": "dec-20260610-0008",
+    "run_id": "run-2026-06-10-0001",
+    "ts": "2026-06-10T09:01:09.000Z",
+    "agent": "briefer",
+    "kind": "brief",
+    "summary": "Situation report rpt-20260610-0001 generated: 1 critical exposure secured ($460,000 at risk averted), 2 watch items, residual risk medium.",
+    "evidence_event_ids": ["evt-gdacs-flood-guj-20260610", "evt-noaa-storm-gulf-20260610"],
+    "simulated": false,
+    "related": { "report_id": "rpt-20260610-0001" }
+  }
+]

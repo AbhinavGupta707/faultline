@@ -1,0 +1,24 @@
+{
+  "exposures": [
+    {
+      "product_id": "prd-granola-bar",
+      "product_name": "Trailpoint Granola Bar",
+      "component_id": "cmp-emulsifier",
+      "days_of_cover": 9,
+      "on_hand_units": 1260,
+      "daily_consumption_units": 140,
+      "unit": "kg",
+      "monthly_revenue_usd": 1150000
+    },
+    {
+      "product_id": "prd-sparkling-botanical",
+      "product_name": "Vela Sparkling Botanicals",
+      "component_id": "cmp-emulsifier",
+      "days_of_cover": 18,
+      "on_hand_units": 1620,
+      "daily_consumption_units": 90,
+      "unit": "kg",
+      "monthly_revenue_usd": 950000
+    }
+  ]
+}

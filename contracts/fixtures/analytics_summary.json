@@ -1,0 +1,23 @@
+{
+  "generated_at": "2026-06-10T09:05:00Z",
+  "window_days": 60,
+  "runs_count": 47,
+  "dollars_at_risk_avoided_usd": 2310000,
+  "includes_backfill": true,
+  "risk_over_time": [
+    { "date": "2026-04-15", "product_id": "prd-coldbrew-12oz", "product_name": "Northwind Cold-Brew Coffee (12 oz can)", "severity_avg": 0.22, "dollars_at_risk_usd": 64000 },
+    { "date": "2026-04-15", "product_id": "prd-granola-bar", "product_name": "Trailpoint Granola Bar", "severity_avg": 0.31, "dollars_at_risk_usd": 118000 },
+    { "date": "2026-04-15", "product_id": "prd-sparkling-botanical", "product_name": "Vela Sparkling Botanicals", "severity_avg": 0.18, "dollars_at_risk_usd": 41000 },
+    { "date": "2026-05-15", "product_id": "prd-coldbrew-12oz", "product_name": "Northwind Cold-Brew Coffee (12 oz can)", "severity_avg": 0.41, "dollars_at_risk_usd": 232000 },
+    { "date": "2026-05-15", "product_id": "prd-granola-bar", "product_name": "Trailpoint Granola Bar", "severity_avg": 0.26, "dollars_at_risk_usd": 87000 },
+    { "date": "2026-05-15", "product_id": "prd-sparkling-botanical", "product_name": "Vela Sparkling Botanicals", "severity_avg": 0.24, "dollars_at_risk_usd": 56000 },
+    { "date": "2026-06-09", "product_id": "prd-coldbrew-12oz", "product_name": "Northwind Cold-Brew Coffee (12 oz can)", "severity_avg": 0.35, "dollars_at_risk_usd": 154000 },
+    { "date": "2026-06-09", "product_id": "prd-granola-bar", "product_name": "Trailpoint Granola Bar", "severity_avg": 0.62, "dollars_at_risk_usd": 412000 },
+    { "date": "2026-06-09", "product_id": "prd-sparkling-botanical", "product_name": "Vela Sparkling Botanicals", "severity_avg": 0.38, "dollars_at_risk_usd": 92000 }
+  ],
+  "top_chokepoints": [
+    { "supplier_id": "sup-vadodara-chem", "name": "Vadodara Specialty Chemicals Pvt Ltd", "country": "IN", "tier": 3, "incident_count": 6, "products_affected": ["prd-granola-bar", "prd-sparkling-botanical"] },
+    { "supplier_id": "sup-ulsan-mill", "name": "Ulsan Rolling Mill Co.", "country": "KR", "tier": 2, "incident_count": 4, "products_affected": ["prd-coldbrew-12oz", "prd-sparkling-botanical"] },
+    { "supplier_id": "sup-minas-coop", "name": "Cooperativa Café Sul de Minas", "country": "BR", "tier": 2, "incident_count": 3, "products_affected": ["prd-coldbrew-12oz"] }
+  ]
+}

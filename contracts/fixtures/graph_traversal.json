@@ -1,0 +1,28 @@
+{
+  "paths": [
+    {
+      "root_supplier_id": "sup-vadodara-chem",
+      "supplier_chain": [
+        { "supplier_id": "sup-vadodara-chem", "name": "Vadodara Specialty Chemicals Pvt Ltd", "tier": 3 },
+        { "supplier_id": "sup-mumbai-blend", "name": "Asha Food Ingredients Ltd", "tier": 1 }
+      ],
+      "component_id": "cmp-emulsifier",
+      "component_name": "Food-grade emulsifier blend (E471/E414)",
+      "product_id": "prd-granola-bar",
+      "product_name": "Trailpoint Granola Bar",
+      "hops": 2
+    },
+    {
+      "root_supplier_id": "sup-vadodara-chem",
+      "supplier_chain": [
+        { "supplier_id": "sup-vadodara-chem", "name": "Vadodara Specialty Chemicals Pvt Ltd", "tier": 3 },
+        { "supplier_id": "sup-rotterdam-blend", "name": "Van Doorn Ingredient Works B.V.", "tier": 1 }
+      ],
+      "component_id": "cmp-emulsifier",
+      "component_name": "Food-grade emulsifier blend (E471/E414)",
+      "product_id": "prd-sparkling-botanical",
+      "product_name": "Vela Sparkling Botanicals",
+      "hops": 2
+    }
+  ]
+}

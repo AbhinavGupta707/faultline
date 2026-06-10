@@ -1,0 +1,11 @@
+{
+  "mappings": {
+    "properties": {
+      "parent_type": { "type": "keyword" },
+      "parent_id": { "type": "keyword" },
+      "component_id": { "type": "keyword" },
+      "qty_per_unit": { "type": "float" },
+      "unit": { "type": "keyword" }
+    }
+  }
+}

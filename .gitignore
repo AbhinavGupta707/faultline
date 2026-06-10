@@ -1,0 +1,36 @@
+# secrets / env — never committed
+.env
+.env.*
+!infra/env.example
+*.key
+service-account*.json
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+dist/
+*.egg-info/
+
+# node / vite
+node_modules/
+web/dist/
+*.local
+
+# firebase
+.firebase/
+firebase-debug.log
+
+# editor / os junk
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*Zone.Identifier
+
+# claude
+.claude/

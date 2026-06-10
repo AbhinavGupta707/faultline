@@ -1,0 +1,10 @@
+[
+  { "parent_type": "product", "parent_id": "prd-granola-bar", "component_id": "cmp-emulsifier", "qty_per_unit": 0.002, "unit": "kg" },
+  { "parent_type": "product", "parent_id": "prd-granola-bar", "component_id": "cmp-oats", "qty_per_unit": 0.04, "unit": "kg" },
+  { "parent_type": "product", "parent_id": "prd-granola-bar", "component_id": "cmp-pet-film", "qty_per_unit": 0.003, "unit": "m2" },
+  { "parent_type": "product", "parent_id": "prd-sparkling-botanical", "component_id": "cmp-emulsifier", "qty_per_unit": 0.002, "unit": "kg" },
+  { "parent_type": "product", "parent_id": "prd-sparkling-botanical", "component_id": "cmp-botanical-extract", "qty_per_unit": 0.001, "unit": "kg" },
+  { "parent_type": "product", "parent_id": "prd-sparkling-botanical", "component_id": "cmp-alu-can", "qty_per_unit": 1, "unit": "can" },
+  { "parent_type": "product", "parent_id": "prd-coldbrew-12oz", "component_id": "cmp-coffee-arabica", "qty_per_unit": 0.018, "unit": "kg" },
+  { "parent_type": "product", "parent_id": "prd-coldbrew-12oz", "component_id": "cmp-alu-can", "qty_per_unit": 1, "unit": "can" }
+]

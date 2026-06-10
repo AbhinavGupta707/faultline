@@ -1,0 +1,17 @@
+{
+  "report_id": "rpt-20260610-0001",
+  "run_id": "run-2026-06-10-0001",
+  "title": "Situation Report — Gujarat flood: emulsifier supply secured",
+  "generated_at": "2026-06-10T09:01:06Z",
+  "headline_metric": { "label": "$ at risk averted", "value": "$460,000" },
+  "highlights": [
+    "Monsoon flooding took Northwind's sole-source emulsifier plant (Vadodara, Gujarat) offline; estimated 21-day disruption.",
+    "Critical exposure: Trailpoint Granola Bar — 9 days of cover, $460,000 at risk; Vela Sparkling Botanicals on watch (18 days of cover).",
+    "Re-sourced to Jurong Fine Ingredients (Singapore) under contingent PO po-2026-0042: 12,000 kg at $4.85/kg, 3,000 kg by air arriving 2026-06-17.",
+    "Supplier confirmed by call; Verifier confirms the gap is closed with 2 days of margin. Residual risk: medium (single qualified alternate)."
+  ],
+  "markdown_gcs_uri": "gs://faultline-assets/reports/rpt-20260610-0001.md",
+  "pdf_gcs_uri": "gs://faultline-assets/reports/rpt-20260610-0001.pdf",
+  "download_path": "/report/run-2026-06-10-0001",
+  "evidence_event_ids": ["evt-gdacs-flood-guj-20260610", "evt-noaa-storm-gulf-20260610"]
+}

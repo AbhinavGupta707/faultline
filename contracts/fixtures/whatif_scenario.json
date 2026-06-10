@@ -1,0 +1,12 @@
+{
+  "scenario": {
+    "scenario_id": "scn-minas-frost-001",
+    "preset": "minas-frost",
+    "title": "Frost in Minas Gerais",
+    "event_type": "frost",
+    "location": { "lat": -21.55, "lon": -45.44 },
+    "place_name": "Varginha, Minas Gerais, Brazil",
+    "duration_days": 14,
+    "magnitude": 0.7
+  }
+}

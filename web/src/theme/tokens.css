@@ -1,0 +1,53 @@
+/* Faultline design tokens — per faultline_ui_design_prompts.md (Session C1 owns).
+   Cartographic control tower: dark, instrument-like, all boldness spent on the map. */
+:root {
+  /* palette */
+  --base: #0a1422;        /* midnight nautical */
+  --panel: #060d17;       /* deeper panels */
+  --landmass: #1b2a3d;    /* muted slate */
+  --graph-edge: #2dd4bf;  /* teal supplier arcs */
+  --signal: #f5b544;      /* amber — agent focus/actions */
+  --risk: #ff5c5c;        /* coral */
+  --watch: #f5b544;       /* amber */
+  --secured: #4ade80;     /* mint */
+  --ink: #e6edf6;
+  --ink-dim: #8a9bb3;
+  --hairline: rgba(138, 155, 179, 0.18);
+
+  /* type */
+  --font-grotesque: "Space Grotesk", "Geist", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "Geist Mono", ui-monospace, monospace;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  background: var(--base);
+  color: var(--ink);
+  font-family: var(--font-grotesque);
+}
+
+.mono { font-family: var(--font-mono); }
+.dim { color: var(--ink-dim); }
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

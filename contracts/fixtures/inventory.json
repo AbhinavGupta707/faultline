@@ -1,0 +1,10 @@
+[
+  { "product_id": "prd-granola-bar", "component_id": "cmp-emulsifier", "on_hand_units": 1260, "daily_consumption_units": 140, "unit": "kg", "days_of_cover": 9, "as_of": "2026-06-10T06:00:00Z" },
+  { "product_id": "prd-sparkling-botanical", "component_id": "cmp-emulsifier", "on_hand_units": 1620, "daily_consumption_units": 90, "unit": "kg", "days_of_cover": 18, "as_of": "2026-06-10T06:00:00Z" },
+  { "product_id": "prd-coldbrew-12oz", "component_id": "cmp-coffee-arabica", "on_hand_units": 10300, "daily_consumption_units": 936, "unit": "kg", "days_of_cover": 11, "as_of": "2026-06-10T06:00:00Z" },
+  { "product_id": "prd-granola-bar", "component_id": "cmp-oats", "on_hand_units": 154000, "daily_consumption_units": 2800, "unit": "kg", "days_of_cover": 55, "as_of": "2026-06-10T06:00:00Z" },
+  { "product_id": "prd-granola-bar", "component_id": "cmp-pet-film", "on_hand_units": 7140, "daily_consumption_units": 210, "unit": "m2", "days_of_cover": 34, "as_of": "2026-06-10T06:00:00Z" },
+  { "product_id": "prd-coldbrew-12oz", "component_id": "cmp-alu-can", "on_hand_units": 2180000, "daily_consumption_units": 52000, "unit": "can", "days_of_cover": 42, "as_of": "2026-06-10T06:00:00Z" },
+  { "product_id": "prd-sparkling-botanical", "component_id": "cmp-alu-can", "on_hand_units": 1890000, "daily_consumption_units": 45000, "unit": "can", "days_of_cover": 42, "as_of": "2026-06-10T06:00:00Z" },
+  { "product_id": "prd-sparkling-botanical", "component_id": "cmp-botanical-extract", "on_hand_units": 1150, "daily_consumption_units": 45, "unit": "kg", "days_of_cover": 26, "as_of": "2026-06-10T06:00:00Z" }
+]

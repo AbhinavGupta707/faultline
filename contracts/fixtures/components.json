@@ -1,0 +1,8 @@
+[
+  { "component_id": "cmp-emulsifier", "name": "Food-grade emulsifier blend (E471/E414)", "category": "ingredient", "criticality": "high" },
+  { "component_id": "cmp-coffee-arabica", "name": "Arabica green coffee beans", "category": "ingredient", "criticality": "high" },
+  { "component_id": "cmp-alu-can", "name": "12 oz aluminium beverage can", "category": "packaging", "criticality": "high" },
+  { "component_id": "cmp-pet-film", "name": "PET/BOPP laminate packaging film", "category": "packaging", "criticality": "medium" },
+  { "component_id": "cmp-oats", "name": "Rolled oats", "category": "ingredient", "criticality": "medium" },
+  { "component_id": "cmp-botanical-extract", "name": "Botanical extract (elderflower & yuzu)", "category": "ingredient", "criticality": "medium" }
+]

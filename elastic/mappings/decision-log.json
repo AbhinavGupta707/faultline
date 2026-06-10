@@ -1,0 +1,28 @@
+{
+  "mappings": {
+    "properties": {
+      "decision_id": { "type": "keyword" },
+      "run_id": { "type": "keyword" },
+      "ts": { "type": "date" },
+      "agent": { "type": "keyword" },
+      "kind": { "type": "keyword" },
+      "summary": { "type": "text" },
+      "detail": { "type": "text" },
+      "evidence_event_ids": { "type": "keyword" },
+      "simulated": { "type": "boolean" },
+      "related": {
+        "properties": {
+          "product_ids": { "type": "keyword" },
+          "supplier_ids": { "type": "keyword" },
+          "component_ids": { "type": "keyword" },
+          "exposure_ids": { "type": "keyword" },
+          "path_ids": { "type": "keyword" },
+          "approval_id": { "type": "keyword" },
+          "po_id": { "type": "keyword" },
+          "call_id": { "type": "keyword" },
+          "report_id": { "type": "keyword" }
+        }
+      }
+    }
+  }
+}

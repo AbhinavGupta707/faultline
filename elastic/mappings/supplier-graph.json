@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "properties": {
+      "edge_id": { "type": "keyword" },
+      "src_id": { "type": "keyword" },
+      "dst_id": { "type": "keyword" },
+      "dst_type": { "type": "keyword" },
+      "component_id": { "type": "keyword" },
+      "relation": { "type": "keyword" },
+      "route_via": { "type": "keyword" }
+    }
+  }
+}

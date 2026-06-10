@@ -1,0 +1,45 @@
+[
+  { "call_id": "call-20260610-01", "event": "status", "status": "initiating" },
+  { "call_id": "call-20260610-01", "event": "status", "status": "connected" },
+  {
+    "call_id": "call-20260610-01",
+    "event": "transcript",
+    "speaker": "faultline_agent",
+    "text": "Good afternoon — this is Faultline, the AI procurement agent calling on behalf of Northwind Provisions about emulsifier supply. Our Gujarat source is offline due to flooding, and we'd like to confirm the availability you quoted.",
+    "is_final": true
+  },
+  {
+    "call_id": "call-20260610-01",
+    "event": "transcript",
+    "speaker": "supplier",
+    "text": "Hello Faultline, this is Jurong Fine Ingredients order desk. Yes — we hold finished E471/E414 beverage blend in Singapore. Twelve thousand kilograms is available, and we can split air and sea as quoted.",
+    "is_final": true
+  },
+  {
+    "call_id": "call-20260610-01",
+    "event": "transcript",
+    "speaker": "faultline_agent",
+    "text": "We need three thousand kilograms delivered to Navi Mumbai within seven days, with the nine-tonne balance to Rotterdam by sea. Can you commit to air dispatch this week at the quoted four dollars eighty-five per kilogram?",
+    "is_final": true
+  },
+  {
+    "call_id": "call-20260610-01",
+    "event": "transcript",
+    "speaker": "supplier",
+    "text": "Confirmed. Three thousand kilograms by air arriving June seventeenth, nine thousand by sea arriving June twenty-sixth, and we will hold four eighty-five per kilogram for this order.",
+    "is_final": true
+  },
+  {
+    "call_id": "call-20260610-01",
+    "event": "summary",
+    "summary": {
+      "agreed": true,
+      "lead_time_days": 7,
+      "expedited_lead_time_days": 7,
+      "quantity": 12000,
+      "unit_price_usd": 4.85,
+      "notes": "3,000 kg air → Navi Mumbai 2026-06-17; 9,000 kg sea → Rotterdam 2026-06-26. Price held. Agent self-identified as AI; commitment contingent on PO approval (po-2026-0042)."
+    }
+  },
+  { "call_id": "call-20260610-01", "event": "status", "status": "ended" }
+]

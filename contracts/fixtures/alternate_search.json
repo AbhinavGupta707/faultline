@@ -1,0 +1,57 @@
+{
+  "alternates": [
+    {
+      "supplier": {
+        "supplier_id": "sup-jurong-chem",
+        "name": "Jurong Fine Ingredients Pte Ltd",
+        "tier": 3,
+        "location": { "lat": 1.3161, "lon": 103.6957 },
+        "country": "SG",
+        "region": "southeast-asia",
+        "components": ["cmp-emulsifier"],
+        "alternate_for": ["cmp-emulsifier"],
+        "certifications": ["FSSC22000", "Halal", "Kosher"],
+        "lead_time_days": 11,
+        "expedited_lead_time_days": 7,
+        "capacity": "high",
+        "profile_semantic": "Food-grade emulsifier and lipid-systems manufacturer on Jurong Island, Singapore. Produces E471/E414 beverage and bakery emulsifier blends to FSSC 22000, Halal and Kosher standards. Holds finished-goods buffer stock; offers expedited air dispatch from Changi within 48 hours."
+      },
+      "score": 0.91
+    },
+    {
+      "supplier": {
+        "supplier_id": "sup-guadalajara-ing",
+        "name": "Ingredientes Occidente S.A. de C.V.",
+        "tier": 3,
+        "location": { "lat": 20.6597, "lon": -103.3496 },
+        "country": "MX",
+        "region": "latam",
+        "components": ["cmp-emulsifier"],
+        "alternate_for": ["cmp-emulsifier"],
+        "certifications": ["FSSC22000"],
+        "lead_time_days": 9,
+        "expedited_lead_time_days": 6,
+        "capacity": "low",
+        "profile_semantic": "Food-ingredient producer in Guadalajara, Mexico, supplying emulsifier blends to North American snack manufacturers. Short lead times into the US but limited spare capacity; minimum-order flexibility is poor."
+      },
+      "score": 0.74
+    },
+    {
+      "supplier": {
+        "supplier_id": "sup-lyon-emuls",
+        "name": "Provence Lipides SAS",
+        "tier": 3,
+        "location": { "lat": 45.764, "lon": 4.8357 },
+        "country": "FR",
+        "region": "western-europe",
+        "components": ["cmp-emulsifier"],
+        "alternate_for": ["cmp-emulsifier"],
+        "certifications": ["FSSC22000", "ISO22000"],
+        "lead_time_days": 18,
+        "capacity": "medium",
+        "profile_semantic": "Lipid-chemistry specialist near Lyon, France, producing emulsifier systems for dairy and beverage applications. Strong EU regulatory record; production typically allocated a quarter ahead, so new-order lead times run long."
+      },
+      "score": 0.69
+    }
+  ]
+}

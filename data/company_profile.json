@@ -1,0 +1,50 @@
+{
+  "company": {
+    "name": "Northwind Provisions, Inc.",
+    "hq": "Portland, Oregon, US",
+    "vertical": "food-and-beverage",
+    "description": "Mid-market food & beverage brand: cold-brew coffee cans, granola bars, sparkling botanical drinks."
+  },
+  "seed": 42,
+  "notes": "Entity IDs are CANONICAL and must match contracts/fixtures/ exactly (suppliers.json, products.json, components.json, bom.json, supplier_graph.json, inventory.json are the golden subset). seed_generator.py reads this file; the seeder may enrich (more events, history) but never rename ids. Inventory is intentionally tight on the emulsifier and coffee chains (impl plan §4).",
+  "products_file": "see contracts/fixtures/products.json",
+  "components_file": "see contracts/fixtures/components.json",
+  "suppliers_file": "see contracts/fixtures/suppliers.json",
+  "bom_file": "see contracts/fixtures/bom.json",
+  "supplier_graph_file": "see contracts/fixtures/supplier_graph.json",
+  "inventory_file": "see contracts/fixtures/inventory.json",
+  "disruptable_chains": [
+    {
+      "name": "emulsifier",
+      "story": "Single Tier-3 chemical plant in flood-prone Gujarat → 2 Tier-1 blenders → 2 SKUs",
+      "chokepoint": "sup-vadodara-chem",
+      "products": ["prd-granola-bar", "prd-sparkling-botanical"],
+      "tight_cover_days": { "prd-granola-bar": 9, "prd-sparkling-botanical": 18 }
+    },
+    {
+      "name": "coffee",
+      "story": "Frost/drought-belt farms in Minas Gerais → Tier-1 roaster → cold-brew line",
+      "chokepoint": "sup-minas-coop",
+      "products": ["prd-coldbrew-12oz"],
+      "tight_cover_days": { "prd-coldbrew-12oz": 11 }
+    },
+    {
+      "name": "aluminium-cans",
+      "story": "Smelter (Bahrain) → rolling mill (Ulsan) routed via the strike/typhoon-exposed Port of Busan → can plant → cold-brew + sparkling",
+      "chokepoint": "sup-ulsan-mill",
+      "products": ["prd-coldbrew-12oz", "prd-sparkling-botanical"]
+    },
+    {
+      "name": "pet-film",
+      "story": "Hurricane-exposed US Gulf Coast petrochemical film plant → granola packaging",
+      "chokepoint": "sup-gulf-petchem",
+      "products": ["prd-granola-bar"]
+    }
+  ],
+  "whatif_presets": [
+    { "preset": "minas-frost", "title": "Frost in Minas Gerais", "event_type": "frost", "location": { "lat": -21.55, "lon": -45.44 }, "place_name": "Varginha, Minas Gerais, Brazil", "duration_days": 14, "magnitude": 0.7 },
+    { "preset": "suez-closure-3w", "title": "Suez closes 3 weeks", "event_type": "port_disruption", "location": { "lat": 30.7056, "lon": 32.3439 }, "place_name": "Suez Canal, Egypt", "duration_days": 21, "magnitude": 0.8 },
+    { "preset": "gulf-hurricane", "title": "Hurricane hits US Gulf Coast petrochem", "event_type": "hurricane", "location": { "lat": 30.22, "lon": -93.21 }, "place_name": "Lake Charles, Louisiana, US", "duration_days": 10, "magnitude": 0.85 },
+    { "preset": "busan-port-strike", "title": "Port of Busan strike, 10 days", "event_type": "strike", "location": { "lat": 35.1028, "lon": 129.0403 }, "place_name": "Port of Busan, South Korea", "duration_days": 10, "magnitude": 0.6 }
+  ]
+}

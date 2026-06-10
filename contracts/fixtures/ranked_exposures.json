@@ -1,0 +1,61 @@
+{
+  "exposures": [
+    {
+      "exposure_id": "exp-granola-emuls",
+      "rank": 1,
+      "product_id": "prd-granola-bar",
+      "product_name": "Trailpoint Granola Bar",
+      "component_id": "cmp-emulsifier",
+      "root_cause_event_id": "evt-gdacs-flood-guj-20260610",
+      "chokepoint_supplier_id": "sup-vadodara-chem",
+      "days_of_cover": 9,
+      "est_disruption_days": 21,
+      "dollars_at_risk_usd": 460000,
+      "monthly_revenue_usd": 1150000,
+      "severity": 0.84,
+      "status": "at_risk",
+      "rationale": "Sole-source emulsifier plant offline with flood waters still rising; 9 days of cover against an estimated 21-day disruption (flood recession + plant restart + QA release) leaves ~12 production days unprotected at ~$38.3k/day.",
+      "evidence_event_ids": ["evt-gdacs-flood-guj-20260610"],
+      "path_ids": ["path-emuls-granola"],
+      "simulated": false
+    },
+    {
+      "exposure_id": "exp-sparkling-emuls",
+      "rank": 2,
+      "product_id": "prd-sparkling-botanical",
+      "product_name": "Vela Sparkling Botanicals",
+      "component_id": "cmp-emulsifier",
+      "root_cause_event_id": "evt-gdacs-flood-guj-20260610",
+      "chokepoint_supplier_id": "sup-vadodara-chem",
+      "days_of_cover": 18,
+      "est_disruption_days": 21,
+      "dollars_at_risk_usd": 95000,
+      "monthly_revenue_usd": 950000,
+      "severity": 0.58,
+      "status": "watch",
+      "rationale": "Same root cause through the Rotterdam blender; 18 days of cover absorbs most of the estimated disruption but leaves a ~3-day tail exposed at ~$31.7k/day.",
+      "evidence_event_ids": ["evt-gdacs-flood-guj-20260610"],
+      "path_ids": ["path-emuls-sparkling"],
+      "simulated": false
+    },
+    {
+      "exposure_id": "exp-granola-film",
+      "rank": 3,
+      "product_id": "prd-granola-bar",
+      "product_name": "Trailpoint Granola Bar",
+      "component_id": "cmp-pet-film",
+      "root_cause_event_id": "evt-noaa-storm-gulf-20260610",
+      "chokepoint_supplier_id": "sup-gulf-petchem",
+      "days_of_cover": 34,
+      "est_disruption_days": 5,
+      "dollars_at_risk_usd": 0,
+      "monthly_revenue_usd": 1150000,
+      "severity": 0.3,
+      "status": "watch",
+      "rationale": "Tropical Storm Delia may pause film extrusion ~5 days; 34 days of film cover fully absorbs it. Watch for storm intensification.",
+      "evidence_event_ids": ["evt-noaa-storm-gulf-20260610"],
+      "path_ids": [],
+      "simulated": false
+    }
+  ]
+}

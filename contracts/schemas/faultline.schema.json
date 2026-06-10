@@ -1,0 +1,1028 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://faultline.dev/contracts/faultline.schema.json",
+  "title": "Faultline contracts — canonical machine-readable schemas (FROZEN at phase0; only Session F amends)",
+  "description": "Every cross-session payload type as a named $def. Validation rule project-wide: required fields are strict; unknown extra fields are ALLOWED and must be ignored by consumers (forward compatibility). Producers may only add fields via a contract amendment by Session F.",
+  "$defs": {
+
+    "geo_point": {
+      "type": "object",
+      "required": ["lat", "lon"],
+      "properties": {
+        "lat": { "type": "number", "minimum": -90, "maximum": 90 },
+        "lon": { "type": "number", "minimum": -180, "maximum": 180 }
+      }
+    },
+
+    "event_type": {
+      "type": "string",
+      "enum": ["earthquake", "flood", "storm", "hurricane", "wildfire", "industrial_accident", "recall", "strike", "port_disruption", "drought", "frost", "geopolitical", "other"]
+    },
+
+    "world_event": {
+      "type": "object",
+      "description": "Doc shape of the `world-events` index (and what-if synthetic events). `event_semantic` is populated server-side by the semantic_text mapping — never sent by producers.",
+      "required": ["id", "source", "title", "event_type", "location", "place_name", "region", "severity_raw", "published_at", "simulated"],
+      "properties": {
+        "id": { "type": "string" },
+        "source": { "type": "string", "enum": ["usgs", "noaa", "gdacs", "openfda", "gdelt", "whatif", "seed"] },
+        "title": { "type": "string" },
+        "summary": { "type": "string" },
+        "event_type": { "$ref": "#/$defs/event_type" },
+        "location": { "$ref": "#/$defs/geo_point" },
+        "place_name": { "type": "string" },
+        "region": { "type": "string" },
+        "severity_raw": { "type": "number", "minimum": 0, "maximum": 1 },
+        "published_at": { "type": "string", "format": "date-time" },
+        "url": { "type": "string" },
+        "simulated": { "type": "boolean" }
+      }
+    },
+
+    "supplier": {
+      "type": "object",
+      "description": "Doc shape of the `suppliers` index. `alternate_for` lists component_ids this supplier can serve as a qualified backup for. `profile_semantic` is the human-readable capability blurb that feeds ELSER.",
+      "required": ["supplier_id", "name", "tier", "location", "country", "region", "components", "lead_time_days", "capacity"],
+      "properties": {
+        "supplier_id": { "type": "string" },
+        "name": { "type": "string" },
+        "tier": { "type": "integer", "minimum": 1, "maximum": 4 },
+        "location": { "$ref": "#/$defs/geo_point" },
+        "country": { "type": "string", "description": "ISO 3166-1 alpha-2" },
+        "region": { "type": "string" },
+        "components": { "type": "array", "items": { "type": "string" } },
+        "alternate_for": { "type": "array", "items": { "type": "string" } },
+        "certifications": { "type": "array", "items": { "type": "string" } },
+        "lead_time_days": { "type": "integer", "minimum": 0 },
+        "expedited_lead_time_days": { "type": "integer", "minimum": 0 },
+        "capacity": { "type": "string", "enum": ["low", "medium", "high"] },
+        "profile_semantic": { "type": "string" }
+      }
+    },
+
+    "component": {
+      "type": "object",
+      "required": ["component_id", "name"],
+      "properties": {
+        "component_id": { "type": "string" },
+        "name": { "type": "string" },
+        "category": { "type": "string" },
+        "criticality": { "type": "string", "enum": ["low", "medium", "high"] }
+      }
+    },
+
+    "product": {
+      "type": "object",
+      "required": ["product_id", "name", "monthly_revenue_usd"],
+      "properties": {
+        "product_id": { "type": "string" },
+        "name": { "type": "string" },
+        "line": { "type": "string" },
+        "monthly_revenue_usd": { "type": "number", "minimum": 0 },
+        "daily_demand_units": { "type": "number", "minimum": 0 },
+        "unit": { "type": "string" }
+      }
+    },
+
+    "bom_edge": {
+      "type": "object",
+      "description": "Doc shape of the `bom` index (multi-tier edges: product→component or component→component).",
+      "required": ["parent_type", "parent_id", "component_id"],
+      "properties": {
+        "parent_type": { "type": "string", "enum": ["product", "component"] },
+        "parent_id": { "type": "string" },
+        "component_id": { "type": "string" },
+        "qty_per_unit": { "type": "number", "minimum": 0 },
+        "unit": { "type": "string" }
+      }
+    },
+
+    "graph_edge": {
+      "type": "object",
+      "description": "Doc shape of the `supplier-graph` index (precomputed hop edges).",
+      "required": ["edge_id", "src_id", "dst_id", "dst_type", "component_id"],
+      "properties": {
+        "edge_id": { "type": "string" },
+        "src_id": { "type": "string", "description": "supplier_id" },
+        "dst_id": { "type": "string", "description": "supplier_id or product_id per dst_type" },
+        "dst_type": { "type": "string", "enum": ["supplier", "product"] },
+        "component_id": { "type": "string" },
+        "relation": { "type": "string", "const": "supplies" },
+        "route_via": { "type": "string", "description": "optional chokepoint annotation, e.g. 'Port of Busan'" }
+      }
+    },
+
+    "inventory_item": {
+      "type": "object",
+      "description": "Doc shape of the `inventory` index — component cover tracked per (product, component) pair.",
+      "required": ["product_id", "component_id", "days_of_cover"],
+      "properties": {
+        "product_id": { "type": "string" },
+        "component_id": { "type": "string" },
+        "on_hand_units": { "type": "number", "minimum": 0 },
+        "daily_consumption_units": { "type": "number", "minimum": 0 },
+        "unit": { "type": "string" },
+        "days_of_cover": { "type": "number", "minimum": 0 },
+        "as_of": { "type": "string", "format": "date-time" }
+      }
+    },
+
+    "decision": {
+      "type": "object",
+      "description": "Doc shape of the `decision-log` index AND the payload of ws `decision.logged`. Every conclusion carries evidence_event_ids (may be empty only for pure operator actions).",
+      "required": ["decision_id", "run_id", "ts", "agent", "kind", "summary", "evidence_event_ids"],
+      "properties": {
+        "decision_id": { "type": "string" },
+        "run_id": { "type": "string" },
+        "ts": { "type": "string", "format": "date-time" },
+        "agent": { "type": "string" },
+        "kind": { "type": "string", "enum": ["triage", "trace", "assess", "approval", "resource", "negotiate", "verify", "brief", "enrich", "other"] },
+        "summary": { "type": "string" },
+        "detail": { "type": "string" },
+        "evidence_event_ids": { "type": "array", "items": { "type": "string" } },
+        "simulated": { "type": "boolean" },
+        "related": {
+          "type": "object",
+          "properties": {
+            "product_ids": { "type": "array", "items": { "type": "string" } },
+            "supplier_ids": { "type": "array", "items": { "type": "string" } },
+            "component_ids": { "type": "array", "items": { "type": "string" } },
+            "exposure_ids": { "type": "array", "items": { "type": "string" } },
+            "path_ids": { "type": "array", "items": { "type": "string" } },
+            "approval_id": { "type": "string" },
+            "po_id": { "type": "string" },
+            "call_id": { "type": "string" },
+            "report_id": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "relevant_event": {
+      "type": "object",
+      "required": ["event_id", "title", "source", "event_type", "severity_raw", "location", "place_name", "published_at", "simulated", "why_relevant", "supplier_hints"],
+      "properties": {
+        "event_id": { "type": "string" },
+        "title": { "type": "string" },
+        "source": { "type": "string" },
+        "event_type": { "$ref": "#/$defs/event_type" },
+        "severity_raw": { "type": "number", "minimum": 0, "maximum": 1 },
+        "location": { "$ref": "#/$defs/geo_point" },
+        "place_name": { "type": "string" },
+        "published_at": { "type": "string", "format": "date-time" },
+        "url": { "type": "string" },
+        "simulated": { "type": "boolean" },
+        "why_relevant": { "type": "string" },
+        "supplier_hints": { "type": "array", "items": { "type": "string" }, "description": "supplier_ids suspected affected (Watcher's cheap guess; Tracer confirms)" }
+      }
+    },
+
+    "relevant_events_payload": {
+      "type": "object",
+      "description": "agent.emit kind=relevant_events (Watcher).",
+      "required": ["events"],
+      "properties": {
+        "events": { "type": "array", "items": { "$ref": "#/$defs/relevant_event" } },
+        "considered_count": { "type": "integer", "minimum": 0 },
+        "window": {
+          "type": "object",
+          "properties": { "from": { "type": "string", "format": "date-time" }, "to": { "type": "string", "format": "date-time" } }
+        }
+      }
+    },
+
+    "chain_node": {
+      "type": "object",
+      "required": ["supplier_id", "name", "tier"],
+      "properties": {
+        "supplier_id": { "type": "string" },
+        "name": { "type": "string" },
+        "tier": { "type": "integer", "minimum": 1, "maximum": 4 },
+        "role": { "type": "string" },
+        "location": { "$ref": "#/$defs/geo_point" },
+        "country": { "type": "string" }
+      }
+    },
+
+    "exposure_path": {
+      "type": "object",
+      "description": "One event→supplier→…→product path. supplier_chain is ordered upstream→downstream (root affected supplier first).",
+      "required": ["path_id", "event_id", "supplier_chain", "component_id", "component_name", "product_id", "product_name", "hops", "match"],
+      "properties": {
+        "path_id": { "type": "string" },
+        "event_id": { "type": "string" },
+        "supplier_chain": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/chain_node" } },
+        "component_id": { "type": "string" },
+        "component_name": { "type": "string" },
+        "product_id": { "type": "string" },
+        "product_name": { "type": "string" },
+        "hops": { "type": "integer", "minimum": 1 },
+        "match": {
+          "type": "object",
+          "required": ["score", "method"],
+          "properties": {
+            "score": { "type": "number", "minimum": 0, "maximum": 1 },
+            "method": { "type": "string", "enum": ["hybrid_bm25_elser", "semantic", "geo", "exact"] },
+            "rationale": { "type": "string" }
+          }
+        }
+      }
+    },
+
+    "exposure_paths_payload": {
+      "type": "object",
+      "description": "agent.emit kind=exposure_paths (Tracer).",
+      "required": ["event_id", "paths"],
+      "properties": {
+        "event_id": { "type": "string" },
+        "paths": { "type": "array", "items": { "$ref": "#/$defs/exposure_path" } }
+      }
+    },
+
+    "exposure": {
+      "type": "object",
+      "description": "One ranked exposure. dollars_at_risk_usd = daily_revenue × max(0, est_disruption_days − days_of_cover). status drives UI color: at_risk=coral, watch=amber, secured=mint.",
+      "required": ["exposure_id", "rank", "product_id", "product_name", "component_id", "root_cause_event_id", "chokepoint_supplier_id", "days_of_cover", "est_disruption_days", "dollars_at_risk_usd", "severity", "status", "rationale", "evidence_event_ids", "path_ids"],
+      "properties": {
+        "exposure_id": { "type": "string" },
+        "rank": { "type": "integer", "minimum": 1 },
+        "product_id": { "type": "string" },
+        "product_name": { "type": "string" },
+        "component_id": { "type": "string" },
+        "root_cause_event_id": { "type": "string" },
+        "chokepoint_supplier_id": { "type": "string" },
+        "days_of_cover": { "type": "number", "minimum": 0 },
+        "est_disruption_days": { "type": "number", "minimum": 0 },
+        "dollars_at_risk_usd": { "type": "number", "minimum": 0 },
+        "monthly_revenue_usd": { "type": "number", "minimum": 0 },
+        "severity": { "type": "number", "minimum": 0, "maximum": 1 },
+        "status": { "type": "string", "enum": ["at_risk", "watch", "secured"] },
+        "rationale": { "type": "string" },
+        "evidence_event_ids": { "type": "array", "items": { "type": "string" } },
+        "path_ids": { "type": "array", "items": { "type": "string" } },
+        "simulated": { "type": "boolean" }
+      }
+    },
+
+    "ranked_exposures_payload": {
+      "type": "object",
+      "description": "agent.emit kind=ranked_exposures (Assessor; Enricher may re-emit with refined severity).",
+      "required": ["exposures"],
+      "properties": {
+        "exposures": { "type": "array", "items": { "$ref": "#/$defs/exposure" } },
+        "enriched": { "type": "boolean", "description": "true when re-emitted by the multimodal Enricher" }
+      }
+    },
+
+    "alternate": {
+      "type": "object",
+      "required": ["supplier_id", "name", "location", "country", "lead_time_days", "capacity", "match_score"],
+      "properties": {
+        "supplier_id": { "type": "string" },
+        "name": { "type": "string" },
+        "tier": { "type": "integer" },
+        "location": { "$ref": "#/$defs/geo_point" },
+        "country": { "type": "string" },
+        "lead_time_days": { "type": "integer", "minimum": 0 },
+        "expedited_lead_time_days": { "type": "integer", "minimum": 0 },
+        "capacity": { "type": "string", "enum": ["low", "medium", "high"] },
+        "certifications": { "type": "array", "items": { "type": "string" } },
+        "match_score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "est_unit_cost_usd": { "type": "number", "minimum": 0 },
+        "rationale": { "type": "string" }
+      }
+    },
+
+    "alternates_payload": {
+      "type": "object",
+      "description": "agent.emit kind=alternates (Resourcer).",
+      "required": ["exposure_id", "component_id", "alternates", "recommended_supplier_id"],
+      "properties": {
+        "exposure_id": { "type": "string" },
+        "component_id": { "type": "string" },
+        "alternates": { "type": "array", "items": { "$ref": "#/$defs/alternate" } },
+        "recommended_supplier_id": { "type": "string" }
+      }
+    },
+
+    "draft_po_payload": {
+      "type": "object",
+      "description": "agent.emit kind=draft_po (Resourcer) AND the po_generator input doc.",
+      "required": ["po_id", "exposure_id", "supplier_id", "supplier_name", "component_id", "component_name", "quantity", "unit", "unit_price_usd", "total_usd", "need_by_date", "lead_time_days", "contingent", "status"],
+      "properties": {
+        "po_id": { "type": "string" },
+        "run_id": { "type": "string" },
+        "exposure_id": { "type": "string" },
+        "supplier_id": { "type": "string" },
+        "supplier_name": { "type": "string" },
+        "component_id": { "type": "string" },
+        "component_name": { "type": "string" },
+        "quantity": { "type": "number", "exclusiveMinimum": 0 },
+        "unit": { "type": "string" },
+        "unit_price_usd": { "type": "number", "exclusiveMinimum": 0 },
+        "total_usd": { "type": "number", "exclusiveMinimum": 0 },
+        "currency": { "type": "string", "const": "USD" },
+        "incoterms": { "type": "string" },
+        "ship_mode": { "type": "string", "enum": ["air", "sea", "road", "rail", "split"] },
+        "need_by_date": { "type": "string", "format": "date" },
+        "lead_time_days": { "type": "integer", "minimum": 0 },
+        "contingent": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["draft", "approved", "sent", "cancelled"] },
+        "pdf_gcs_uri": { "type": "string" },
+        "notes": { "type": "string" },
+        "buyer": { "type": "string" }
+      }
+    },
+
+    "call_event_payload": {
+      "type": "object",
+      "description": "agent.emit kind=call_event (Negotiator / voice_gateway). event=status|transcript|summary; transcript events require speaker+text.",
+      "required": ["call_id", "event"],
+      "properties": {
+        "call_id": { "type": "string" },
+        "event": { "type": "string", "enum": ["status", "transcript", "summary"] },
+        "status": { "type": "string", "enum": ["initiating", "ringing", "connected", "ended", "failed"] },
+        "speaker": { "type": "string", "enum": ["faultline_agent", "supplier"] },
+        "text": { "type": "string" },
+        "is_final": { "type": "boolean" },
+        "summary": {
+          "type": "object",
+          "required": ["agreed"],
+          "properties": {
+            "agreed": { "type": "boolean" },
+            "lead_time_days": { "type": "integer" },
+            "expedited_lead_time_days": { "type": "integer" },
+            "quantity": { "type": "number" },
+            "unit_price_usd": { "type": "number" },
+            "notes": { "type": "string" }
+          }
+        }
+      },
+      "allOf": [
+        { "if": { "properties": { "event": { "const": "transcript" } } }, "then": { "required": ["speaker", "text"] } },
+        { "if": { "properties": { "event": { "const": "status" } } }, "then": { "required": ["status"] } },
+        { "if": { "properties": { "event": { "const": "summary" } } }, "then": { "required": ["summary"] } }
+      ]
+    },
+
+    "verify_result_payload": {
+      "type": "object",
+      "description": "agent.emit kind=verify_result (Verifier). margin_days = days_of_cover − alternate_lead_time_days.",
+      "required": ["exposure_id", "product_id", "gap_closed", "days_of_cover", "alternate_lead_time_days", "margin_days", "residual_risk", "summary", "evidence_event_ids"],
+      "properties": {
+        "exposure_id": { "type": "string" },
+        "product_id": { "type": "string" },
+        "gap_closed": { "type": "boolean" },
+        "days_of_cover": { "type": "number" },
+        "alternate_lead_time_days": { "type": "number" },
+        "margin_days": { "type": "number" },
+        "residual_risk": {
+          "type": "object",
+          "required": ["level", "factors"],
+          "properties": {
+            "level": { "type": "string", "enum": ["low", "medium", "high"] },
+            "factors": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "status_change": {
+          "type": "object",
+          "required": ["from", "to"],
+          "properties": {
+            "from": { "type": "string", "enum": ["at_risk", "watch", "secured"] },
+            "to": { "type": "string", "enum": ["at_risk", "watch", "secured"] }
+          }
+        },
+        "summary": { "type": "string" },
+        "evidence_event_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "brief_payload": {
+      "type": "object",
+      "description": "agent.emit kind=brief (Briefer, Session G). download_path is the http_api route for the report.",
+      "required": ["report_id", "run_id", "title", "generated_at", "highlights", "evidence_event_ids"],
+      "properties": {
+        "report_id": { "type": "string" },
+        "run_id": { "type": "string" },
+        "title": { "type": "string" },
+        "generated_at": { "type": "string", "format": "date-time" },
+        "headline_metric": {
+          "type": "object",
+          "required": ["label", "value"],
+          "properties": { "label": { "type": "string" }, "value": { "type": "string" } }
+        },
+        "highlights": { "type": "array", "items": { "type": "string" } },
+        "markdown_gcs_uri": { "type": "string" },
+        "pdf_gcs_uri": { "type": "string" },
+        "download_path": { "type": "string", "description": "e.g. /report/run-2026-06-10-0001" },
+        "evidence_event_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "plan_step": {
+      "type": "object",
+      "required": ["id", "label", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "active", "done", "error", "skipped"] }
+      }
+    },
+
+    "ws_envelope": {
+      "type": "object",
+      "description": "Base envelope on EVERY ws message (both directions). run_id is null only before a run exists (e.g. boot status). dir appears only in ws_replay.jsonl to mark scripted client→server lines.",
+      "required": ["type", "ts", "run_id"],
+      "properties": {
+        "type": { "type": "string" },
+        "ts": { "type": "string", "format": "date-time" },
+        "run_id": { "type": ["string", "null"] },
+        "seq": { "type": "integer", "minimum": 0 },
+        "dir": { "type": "string", "enum": ["s2c", "c2s"] }
+      }
+    },
+
+    "plan_update_msg": {
+      "allOf": [
+        { "$ref": "#/$defs/ws_envelope" },
+        {
+          "properties": {
+            "type": { "const": "plan.update" },
+            "payload": {
+              "type": "object",
+              "required": ["steps", "active_step"],
+              "properties": {
+                "steps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/plan_step" } },
+                "active_step": { "type": ["string", "null"] }
+              }
+            }
+          },
+          "required": ["payload"]
+        }
+      ]
+    },
+
+    "tool_call_msg": {
+      "allOf": [
+        { "$ref": "#/$defs/ws_envelope" },
+        {
+          "properties": {
+            "type": { "const": "tool.call" },
+            "payload": {
+              "type": "object",
+              "required": ["call_id", "agent", "tool", "args_summary", "status", "elastic"],
+              "properties": {
+                "call_id": { "type": "string", "description": "same id on start and ok/err so the UI can pair them; fast calls may emit ok only" },
+                "agent": { "type": "string" },
+                "tool": { "type": "string" },
+                "args_summary": { "type": "string", "description": "short human-readable arg digest for the chip, NOT raw args" },
+                "status": { "type": "string", "enum": ["start", "ok", "err"] },
+                "elastic": { "type": "boolean", "description": "true for the six Elastic MCP tools — drives the visually-distinct chip" },
+                "latency_ms": { "type": "number", "minimum": 0 },
+                "error": { "type": "string" }
+              }
+            }
+          },
+          "required": ["payload"]
+        }
+      ]
+    },
+
+    "agent_emit_msg": {
+      "allOf": [
+        { "$ref": "#/$defs/ws_envelope" },
+        {
+          "properties": { "type": { "const": "agent.emit" } },
+          "required": ["payload"]
+        },
+        {
+          "properties": {
+            "payload": {
+              "type": "object",
+              "required": ["agent", "kind", "payload"],
+              "properties": {
+                "agent": { "type": "string" },
+                "kind": { "type": "string", "enum": ["relevant_events", "exposure_paths", "ranked_exposures", "alternates", "draft_po", "call_event", "verify_result", "brief"] }
+              },
+              "oneOf": [
+                { "properties": { "kind": { "const": "relevant_events" }, "payload": { "$ref": "#/$defs/relevant_events_payload" } } },
+                { "properties": { "kind": { "const": "exposure_paths" }, "payload": { "$ref": "#/$defs/exposure_paths_payload" } } },
+                { "properties": { "kind": { "const": "ranked_exposures" }, "payload": { "$ref": "#/$defs/ranked_exposures_payload" } } },
+                { "properties": { "kind": { "const": "alternates" }, "payload": { "$ref": "#/$defs/alternates_payload" } } },
+                { "properties": { "kind": { "const": "draft_po" }, "payload": { "$ref": "#/$defs/draft_po_payload" } } },
+                { "properties": { "kind": { "const": "call_event" }, "payload": { "$ref": "#/$defs/call_event_payload" } } },
+                { "properties": { "kind": { "const": "verify_result" }, "payload": { "$ref": "#/$defs/verify_result_payload" } } },
+                { "properties": { "kind": { "const": "brief" }, "payload": { "$ref": "#/$defs/brief_payload" } } }
+              ]
+            }
+          }
+        }
+      ]
+    },
+
+    "decision_logged_msg": {
+      "allOf": [
+        { "$ref": "#/$defs/ws_envelope" },
+        {
+          "properties": {
+            "type": { "const": "decision.logged" },
+            "payload": { "$ref": "#/$defs/decision" }
+          },
+          "required": ["payload"]
+        }
+      ]
+    },
+
+    "approval_request_msg": {
+      "allOf": [
+        { "$ref": "#/$defs/ws_envelope" },
+        {
+          "properties": {
+            "type": { "const": "approval.request" },
+            "payload": {
+              "type": "object",
+              "required": ["approval_id", "action_kind", "summary", "context"],
+              "properties": {
+                "approval_id": { "type": "string" },
+                "action_kind": { "type": "string", "enum": ["resource_alternate", "send_po", "negotiation_call", "other"] },
+                "summary": { "type": "string" },
+                "requested_by": { "type": "string" },
+                "context": {
+                  "type": "object",
+                  "properties": {
+                    "exposure_ids": { "type": "array", "items": { "type": "string" } },
+                    "product_ids": { "type": "array", "items": { "type": "string" } },
+                    "component_id": { "type": "string" },
+                    "recommended_supplier_id": { "type": "string" },
+                    "po_id": { "type": "string" },
+                    "dollars_at_risk_total_usd": { "type": "number" },
+                    "evidence_event_ids": { "type": "array", "items": { "type": "string" } }
+                  }
+                },
+                "expires_at": { "type": "string", "format": "date-time" }
+              }
+            }
+          },
+          "required": ["payload"]
+        }
+      ]
+    },
+
+    "status_msg": {
+      "allOf": [
+        { "$ref": "#/$defs/ws_envelope" },
+        {
+          "properties": {
+            "type": { "const": "status" },
+            "payload": {
+              "type": "object",
+              "required": ["mode", "feeds_ok", "elastic_ok"],
+              "properties": {
+                "mode": { "type": "string", "enum": ["live", "simulated"] },
+                "feeds_ok": { "type": "boolean" },
+                "elastic_ok": { "type": "boolean" },
+                "active_run_id": { "type": ["string", "null"] },
+                "note": { "type": "string" }
+              }
+            }
+          },
+          "required": ["payload"]
+        }
+      ]
+    },
+
+    "approval_decision_msg": {
+      "allOf": [
+        { "$ref": "#/$defs/ws_envelope" },
+        {
+          "properties": {
+            "type": { "const": "approval.decision" },
+            "payload": {
+              "type": "object",
+              "required": ["approval_id", "approved"],
+              "properties": {
+                "approval_id": { "type": "string" },
+                "approved": { "type": "boolean" },
+                "note": { "type": "string" }
+              }
+            }
+          },
+          "required": ["payload"]
+        }
+      ]
+    },
+
+    "whatif_scenario": {
+      "type": "object",
+      "required": ["event_type", "location", "duration_days", "magnitude"],
+      "properties": {
+        "scenario_id": { "type": "string" },
+        "preset": { "type": "string", "description": "preset key when launched from a preset, e.g. 'suez-closure-3w', 'minas-frost'" },
+        "title": { "type": "string" },
+        "event_type": { "$ref": "#/$defs/event_type" },
+        "location": { "$ref": "#/$defs/geo_point" },
+        "place_name": { "type": "string" },
+        "duration_days": { "type": "number", "exclusiveMinimum": 0 },
+        "magnitude": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    },
+
+    "whatif_run_msg": {
+      "allOf": [
+        { "$ref": "#/$defs/ws_envelope" },
+        {
+          "properties": {
+            "type": { "const": "whatif.run" },
+            "payload": {
+              "type": "object",
+              "required": ["scenario"],
+              "properties": { "scenario": { "$ref": "#/$defs/whatif_scenario" } }
+            }
+          },
+          "required": ["payload"]
+        }
+      ]
+    },
+
+    "chat_msg": {
+      "allOf": [
+        { "$ref": "#/$defs/ws_envelope" },
+        {
+          "properties": {
+            "type": { "const": "chat" },
+            "payload": {
+              "type": "object",
+              "required": ["text"],
+              "properties": { "text": { "type": "string" } }
+            }
+          },
+          "required": ["payload"]
+        }
+      ]
+    },
+
+    "voice_intent": {
+      "type": "object",
+      "description": "Parsed intent from voice input. action=approve/reject must carry approval_id when one is pending; show carries product_id or supplier_id.",
+      "required": ["action", "confidence"],
+      "properties": {
+        "action": { "type": "string", "enum": ["query", "approve", "reject", "show", "whatif", "unknown"] },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "approval_id": { "type": "string" },
+        "product_id": { "type": "string" },
+        "supplier_id": { "type": "string" },
+        "text": { "type": "string", "description": "normalized query/command text" }
+      }
+    },
+
+    "voice_intent_msg": {
+      "allOf": [
+        { "$ref": "#/$defs/ws_envelope" },
+        {
+          "properties": {
+            "type": { "const": "voice.intent" },
+            "payload": {
+              "type": "object",
+              "required": ["transcript", "intent"],
+              "properties": {
+                "transcript": { "type": "string" },
+                "intent": { "$ref": "#/$defs/voice_intent" }
+              }
+            }
+          },
+          "required": ["payload"]
+        }
+      ]
+    },
+
+    "ws_message": {
+      "description": "Any message on the /ws socket (and any line of ws_replay.jsonl).",
+      "oneOf": [
+        { "$ref": "#/$defs/plan_update_msg" },
+        { "$ref": "#/$defs/tool_call_msg" },
+        { "$ref": "#/$defs/agent_emit_msg" },
+        { "$ref": "#/$defs/decision_logged_msg" },
+        { "$ref": "#/$defs/approval_request_msg" },
+        { "$ref": "#/$defs/status_msg" },
+        { "$ref": "#/$defs/approval_decision_msg" },
+        { "$ref": "#/$defs/whatif_run_msg" },
+        { "$ref": "#/$defs/chat_msg" },
+        { "$ref": "#/$defs/voice_intent_msg" }
+      ]
+    },
+
+    "search_events_input": {
+      "type": "object",
+      "required": ["query"],
+      "properties": {
+        "query": { "type": "string" },
+        "from": { "type": "string", "format": "date-time" },
+        "to": { "type": "string", "format": "date-time" },
+        "geo": {
+          "type": "object",
+          "required": ["lat", "lon", "radius_km"],
+          "properties": {
+            "lat": { "type": "number" }, "lon": { "type": "number" },
+            "radius_km": { "type": "number", "exclusiveMinimum": 0 }
+          }
+        },
+        "include_simulated": { "type": "boolean", "default": false },
+        "size": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 }
+      }
+    },
+    "search_events_output": {
+      "type": "object",
+      "required": ["events"],
+      "properties": {
+        "events": { "type": "array", "items": { "$ref": "#/$defs/world_event" } },
+        "total": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "match_event_to_suppliers_input": {
+      "type": "object",
+      "required": ["event_text"],
+      "properties": {
+        "event_id": { "type": "string" },
+        "event_text": { "type": "string", "description": "title + summary of the event; feeds hybrid BM25+ELSER against supplier profiles" },
+        "lat": { "type": "number" },
+        "lon": { "type": "number" },
+        "radius_km": { "type": "number", "exclusiveMinimum": 0, "default": 500 },
+        "size": { "type": "integer", "minimum": 1, "maximum": 50, "default": 10 }
+      }
+    },
+    "match_event_to_suppliers_output": {
+      "type": "object",
+      "required": ["matches"],
+      "properties": {
+        "matches": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["supplier", "score"],
+            "properties": {
+              "supplier": { "$ref": "#/$defs/supplier" },
+              "score": { "type": "number", "minimum": 0, "maximum": 1, "description": "normalized hybrid relevance; consumers treat ≥0.5 as a confident match" },
+              "signals": {
+                "type": "object",
+                "properties": {
+                  "semantic_score": { "type": "number" },
+                  "bm25_score": { "type": "number" },
+                  "geo_distance_km": { "type": "number" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+
+    "traverse_supply_graph_input": {
+      "type": "object",
+      "required": ["supplier_ids"],
+      "properties": {
+        "supplier_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "max_hops": { "type": "integer", "minimum": 1, "maximum": 6, "default": 4 }
+      }
+    },
+    "traverse_supply_graph_output": {
+      "type": "object",
+      "required": ["paths"],
+      "properties": {
+        "paths": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["root_supplier_id", "supplier_chain", "component_id", "product_id", "hops"],
+            "properties": {
+              "root_supplier_id": { "type": "string" },
+              "supplier_chain": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/chain_node" } },
+              "component_id": { "type": "string" },
+              "component_name": { "type": "string" },
+              "product_id": { "type": "string" },
+              "product_name": { "type": "string" },
+              "hops": { "type": "integer", "minimum": 1 }
+            }
+          }
+        }
+      }
+    },
+
+    "lookup_exposure_input": {
+      "type": "object",
+      "required": ["product_ids"],
+      "properties": {
+        "product_ids": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "component_ids": { "type": "array", "items": { "type": "string" }, "description": "optional filter to the affected components" }
+      }
+    },
+    "lookup_exposure_output": {
+      "type": "object",
+      "required": ["exposures"],
+      "properties": {
+        "exposures": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["product_id", "product_name", "component_id", "days_of_cover", "monthly_revenue_usd"],
+            "properties": {
+              "product_id": { "type": "string" },
+              "product_name": { "type": "string" },
+              "component_id": { "type": "string" },
+              "days_of_cover": { "type": "number", "minimum": 0 },
+              "on_hand_units": { "type": "number" },
+              "daily_consumption_units": { "type": "number" },
+              "unit": { "type": "string" },
+              "monthly_revenue_usd": { "type": "number", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+
+    "find_alternate_suppliers_input": {
+      "type": "object",
+      "required": ["component_id"],
+      "properties": {
+        "component_id": { "type": "string" },
+        "constraints": {
+          "type": "object",
+          "properties": {
+            "max_lead_time_days": { "type": "integer", "minimum": 0 },
+            "required_certifications": { "type": "array", "items": { "type": "string" } },
+            "exclude_supplier_ids": { "type": "array", "items": { "type": "string" } },
+            "min_capacity": { "type": "string", "enum": ["low", "medium", "high"] }
+          }
+        },
+        "size": { "type": "integer", "minimum": 1, "maximum": 20, "default": 5 }
+      }
+    },
+    "find_alternate_suppliers_output": {
+      "type": "object",
+      "required": ["alternates"],
+      "properties": {
+        "alternates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["supplier", "score"],
+            "properties": {
+              "supplier": { "$ref": "#/$defs/supplier" },
+              "score": { "type": "number", "minimum": 0, "maximum": 1 }
+            }
+          }
+        }
+      }
+    },
+
+    "write_decision_input": { "$ref": "#/$defs/decision" },
+    "write_decision_output": {
+      "type": "object",
+      "required": ["acknowledged", "decision_id"],
+      "properties": {
+        "acknowledged": { "type": "boolean", "const": true },
+        "decision_id": { "type": "string" },
+        "index": { "type": "string", "const": "decision-log" }
+      }
+    },
+
+    "whatif_request": {
+      "type": "object",
+      "required": ["scenario"],
+      "properties": { "scenario": { "$ref": "#/$defs/whatif_scenario" } }
+    },
+    "whatif_response": {
+      "type": "object",
+      "required": ["accepted", "run_id", "event_id"],
+      "properties": {
+        "accepted": { "type": "boolean" },
+        "run_id": { "type": "string" },
+        "event_id": { "type": "string", "description": "id of the synthetic simulated:true world-events doc" }
+      }
+    },
+
+    "approval_post_request": {
+      "type": "object",
+      "required": ["approval_id", "approved"],
+      "properties": {
+        "approval_id": { "type": "string" },
+        "approved": { "type": "boolean" },
+        "note": { "type": "string" }
+      }
+    },
+    "approval_post_response": {
+      "type": "object",
+      "required": ["ok", "approval_id", "applied"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "approval_id": { "type": "string" },
+        "applied": { "type": "boolean", "description": "false if the approval was unknown or already decided" }
+      }
+    },
+
+    "analytics_summary": {
+      "type": "object",
+      "description": "GET /analytics/summary response (Session G; thin BQ query, 60s cache).",
+      "required": ["generated_at", "window_days", "runs_count", "dollars_at_risk_avoided_usd", "risk_over_time", "top_chokepoints"],
+      "properties": {
+        "generated_at": { "type": "string", "format": "date-time" },
+        "window_days": { "type": "integer", "minimum": 1 },
+        "runs_count": { "type": "integer", "minimum": 0 },
+        "dollars_at_risk_avoided_usd": { "type": "number", "minimum": 0 },
+        "includes_backfill": { "type": "boolean" },
+        "risk_over_time": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["date", "product_id", "severity_avg", "dollars_at_risk_usd"],
+            "properties": {
+              "date": { "type": "string", "format": "date" },
+              "product_id": { "type": "string" },
+              "product_name": { "type": "string" },
+              "severity_avg": { "type": "number", "minimum": 0, "maximum": 1 },
+              "dollars_at_risk_usd": { "type": "number", "minimum": 0 }
+            }
+          }
+        },
+        "top_chokepoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["supplier_id", "name", "country", "incident_count", "products_affected"],
+            "properties": {
+              "supplier_id": { "type": "string" },
+              "name": { "type": "string" },
+              "country": { "type": "string" },
+              "tier": { "type": "integer" },
+              "incident_count": { "type": "integer", "minimum": 0 },
+              "products_affected": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+
+    "health_response": {
+      "type": "object",
+      "required": ["ok", "service"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "service": { "type": "string" },
+        "mode": { "type": "string" },
+        "elastic_ok": { "type": "boolean" },
+        "version": { "type": "string" }
+      }
+    },
+
+    "voice_in_client_msg": {
+      "type": "object",
+      "description": "JSON control frames on the voice-in WS (binary frames between start/stop are pcm16 audio).",
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "enum": ["start", "stop"] },
+        "sample_rate_hz": { "type": "integer", "const": 16000 },
+        "encoding": { "type": "string", "const": "pcm16" }
+      }
+    },
+    "voice_in_server_msg": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "enum": ["transcript.partial", "transcript.final", "intent", "audio.start", "error"] },
+        "text": { "type": "string" },
+        "transcript": { "type": "string" },
+        "intent": { "$ref": "#/$defs/voice_intent" },
+        "sample_rate_hz": { "type": "integer" },
+        "message": { "type": "string" }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "pattern": "^transcript\\." } } }, "then": { "required": ["text"] } },
+        { "if": { "properties": { "type": { "const": "intent" } } }, "then": { "required": ["transcript", "intent"] } },
+        { "if": { "properties": { "type": { "const": "error" } } }, "then": { "required": ["message"] } }
+      ]
+    },
+    "voice_call_client_msg": {
+      "type": "object",
+      "required": ["type", "call_id"],
+      "properties": {
+        "type": { "type": "string", "enum": ["call.start", "call.end"] },
+        "call_id": { "type": "string" },
+        "po_id": { "type": "string" },
+        "persona": { "type": "string", "const": "supplier" }
+      }
+    },
+    "voice_call_server_msg": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "enum": ["call.event", "audio.start", "error"] },
+        "payload": { "$ref": "#/$defs/call_event_payload" },
+        "sample_rate_hz": { "type": "integer" },
+        "message": { "type": "string" }
+      },
+      "allOf": [
+        { "if": { "properties": { "type": { "const": "call.event" } } }, "then": { "required": ["payload"] } }
+      ]
+    }
+  }
+}

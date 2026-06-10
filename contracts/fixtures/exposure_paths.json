@@ -1,0 +1,41 @@
+{
+  "event_id": "evt-gdacs-flood-guj-20260610",
+  "paths": [
+    {
+      "path_id": "path-emuls-granola",
+      "event_id": "evt-gdacs-flood-guj-20260610",
+      "supplier_chain": [
+        { "supplier_id": "sup-vadodara-chem", "name": "Vadodara Specialty Chemicals Pvt Ltd", "tier": 3, "role": "emulsifier feedstock manufacturer", "location": { "lat": 22.3072, "lon": 73.1812 }, "country": "IN" },
+        { "supplier_id": "sup-mumbai-blend", "name": "Asha Food Ingredients Ltd", "tier": 1, "role": "ingredient blender", "location": { "lat": 19.033, "lon": 73.0297 }, "country": "IN" }
+      ],
+      "component_id": "cmp-emulsifier",
+      "component_name": "Food-grade emulsifier blend (E471/E414)",
+      "product_id": "prd-granola-bar",
+      "product_name": "Trailpoint Granola Bar",
+      "hops": 2,
+      "match": {
+        "score": 0.92,
+        "method": "hybrid_bm25_elser",
+        "rationale": "Event text ('chemical plants', 'GIDC estates', 'Vadodara') matches the supplier profile semantically; plant sits 6.4 km from the flood centroid."
+      }
+    },
+    {
+      "path_id": "path-emuls-sparkling",
+      "event_id": "evt-gdacs-flood-guj-20260610",
+      "supplier_chain": [
+        { "supplier_id": "sup-vadodara-chem", "name": "Vadodara Specialty Chemicals Pvt Ltd", "tier": 3, "role": "emulsifier feedstock manufacturer", "location": { "lat": 22.3072, "lon": 73.1812 }, "country": "IN" },
+        { "supplier_id": "sup-rotterdam-blend", "name": "Van Doorn Ingredient Works B.V.", "tier": 1, "role": "beverage-ingredient compounder", "location": { "lat": 51.9056, "lon": 4.4653 }, "country": "NL" }
+      ],
+      "component_id": "cmp-emulsifier",
+      "component_name": "Food-grade emulsifier blend (E471/E414)",
+      "product_id": "prd-sparkling-botanical",
+      "product_name": "Vela Sparkling Botanicals",
+      "hops": 2,
+      "match": {
+        "score": 0.92,
+        "method": "hybrid_bm25_elser",
+        "rationale": "Same root supplier; second downstream branch through the Rotterdam blender into the sparkling line."
+      }
+    }
+  ]
+}

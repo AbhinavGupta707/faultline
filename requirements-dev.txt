@@ -1,0 +1,3 @@
+# shared dev/test deps (contract validation runs in every session)
+pytest>=8
+jsonschema>=4.21

@@ -1,0 +1,19 @@
+{
+  "mappings": {
+    "properties": {
+      "supplier_id": { "type": "keyword" },
+      "name": { "type": "text" },
+      "tier": { "type": "integer" },
+      "location": { "type": "geo_point" },
+      "country": { "type": "keyword" },
+      "region": { "type": "keyword" },
+      "components": { "type": "keyword" },
+      "alternate_for": { "type": "keyword" },
+      "certifications": { "type": "keyword" },
+      "lead_time_days": { "type": "integer" },
+      "expedited_lead_time_days": { "type": "integer" },
+      "capacity": { "type": "keyword" },
+      "profile_semantic": { "type": "semantic_text" }
+    }
+  }
+}

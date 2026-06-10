@@ -1,0 +1,13 @@
+{
+  "mappings": {
+    "properties": {
+      "product_id": { "type": "keyword" },
+      "component_id": { "type": "keyword" },
+      "on_hand_units": { "type": "float" },
+      "daily_consumption_units": { "type": "float" },
+      "unit": { "type": "keyword" },
+      "days_of_cover": { "type": "float" },
+      "as_of": { "type": "date" }
+    }
+  }
+}

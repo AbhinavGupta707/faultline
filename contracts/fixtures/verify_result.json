@@ -1,0 +1,19 @@
+{
+  "exposure_id": "exp-granola-emuls",
+  "product_id": "prd-granola-bar",
+  "gap_closed": true,
+  "days_of_cover": 9,
+  "alternate_lead_time_days": 7,
+  "margin_days": 2,
+  "residual_risk": {
+    "level": "medium",
+    "factors": [
+      "Single qualified alternate until the Vadodara plant restarts (est. 21 days)",
+      "Expedited air freight adds ~12% landed cost on the first 3,000 kg",
+      "Sea balance reaches Rotterdam on day 16 — inside Vela Sparkling's 18-day cover but with little slack"
+    ]
+  },
+  "status_change": { "from": "at_risk", "to": "secured" },
+  "summary": "Coverage gap closed for Trailpoint Granola Bar: confirmed 7-day expedited delivery beats the 9-day cover runway with 2 days of margin. Vela Sparkling Botanicals is covered by the sea balance arriving day 16 against 18 days of cover.",
+  "evidence_event_ids": ["evt-gdacs-flood-guj-20260610"]
+}

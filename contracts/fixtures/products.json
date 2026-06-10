@@ -1,0 +1,26 @@
+[
+  {
+    "product_id": "prd-coldbrew-12oz",
+    "name": "Northwind Cold-Brew Coffee (12 oz can)",
+    "line": "cold-brew",
+    "monthly_revenue_usd": 1800000,
+    "daily_demand_units": 52000,
+    "unit": "can"
+  },
+  {
+    "product_id": "prd-granola-bar",
+    "name": "Trailpoint Granola Bar",
+    "line": "granola",
+    "monthly_revenue_usd": 1150000,
+    "daily_demand_units": 70000,
+    "unit": "bar"
+  },
+  {
+    "product_id": "prd-sparkling-botanical",
+    "name": "Vela Sparkling Botanicals",
+    "line": "sparkling",
+    "monthly_revenue_usd": 950000,
+    "daily_demand_units": 45000,
+    "unit": "can"
+  }
+]

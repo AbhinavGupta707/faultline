@@ -1,0 +1,58 @@
+[
+  {
+    "id": "evt-gdacs-flood-guj-20260610",
+    "source": "gdacs",
+    "title": "Severe flooding in Vadodara district, Gujarat — industrial estates inundated after record monsoon rainfall",
+    "summary": "Record 48-hour monsoon rainfall has flooded low-lying industrial estates around Vadodara, Gujarat. Local authorities report production halts at chemical and pharmaceutical plants in the GIDC estates and restricted road access. Heavy rain is forecast to continue for 72 hours.",
+    "event_type": "flood",
+    "location": { "lat": 22.31, "lon": 73.18 },
+    "place_name": "Vadodara, Gujarat, India",
+    "region": "south-asia",
+    "severity_raw": 0.78,
+    "published_at": "2026-06-10T08:42:00Z",
+    "url": "https://www.gdacs.org/report.aspx?eventid=FL1062026",
+    "simulated": false
+  },
+  {
+    "id": "evt-usgs-quake-mindanao-20260610",
+    "source": "usgs",
+    "title": "M 5.7 - 18 km SSE of Manay, Philippines",
+    "summary": "Moderate earthquake offshore Davao Oriental at 38 km depth. No tsunami warning issued; light shaking reported in coastal municipalities.",
+    "event_type": "earthquake",
+    "location": { "lat": 6.9214, "lon": 126.5523 },
+    "place_name": "Manay, Davao Oriental, Philippines",
+    "region": "southeast-asia",
+    "severity_raw": 0.45,
+    "published_at": "2026-06-10T05:11:23Z",
+    "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000qx2026",
+    "simulated": false
+  },
+  {
+    "id": "evt-noaa-storm-gulf-20260610",
+    "source": "noaa",
+    "title": "Tropical Storm Warning — Tropical Storm Delia approaching the southwest Louisiana coast",
+    "summary": "Tropical Storm Delia is expected to make landfall near Cameron Parish within 36 hours with sustained winds of 60 mph and 6-10 inches of rain. Industrial facilities along the Calcasieu Ship Channel are beginning precautionary shutdowns.",
+    "event_type": "storm",
+    "location": { "lat": 29.7604, "lon": -93.3 },
+    "place_name": "Cameron Parish, Louisiana, United States",
+    "region": "north-america",
+    "severity_raw": 0.52,
+    "published_at": "2026-06-10T03:00:00Z",
+    "url": "https://api.weather.gov/alerts/urn:oid:2.49.0.1.840.0.delia.2026",
+    "simulated": false
+  },
+  {
+    "id": "evt-whatif-frost-minas-20260610",
+    "source": "whatif",
+    "title": "SIMULATED: Severe frost across the Sul de Minas coffee belt",
+    "summary": "What-if scenario: a severe radiative frost event hits the Sul de Minas growing region for two consecutive nights, damaging maturing arabica cherry and reducing the harvestable crop.",
+    "event_type": "frost",
+    "location": { "lat": -21.55, "lon": -45.44 },
+    "place_name": "Varginha, Minas Gerais, Brazil",
+    "region": "latam",
+    "severity_raw": 0.7,
+    "published_at": "2026-06-10T12:00:00Z",
+    "url": "",
+    "simulated": true
+  }
+]

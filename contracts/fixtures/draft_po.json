@@ -1,0 +1,23 @@
+{
+  "po_id": "po-2026-0042",
+  "run_id": "run-2026-06-10-0001",
+  "exposure_id": "exp-granola-emuls",
+  "supplier_id": "sup-jurong-chem",
+  "supplier_name": "Jurong Fine Ingredients Pte Ltd",
+  "component_id": "cmp-emulsifier",
+  "component_name": "Food-grade emulsifier blend (E471/E414)",
+  "quantity": 12000,
+  "unit": "kg",
+  "unit_price_usd": 4.85,
+  "total_usd": 58200,
+  "currency": "USD",
+  "incoterms": "DAP",
+  "ship_mode": "split",
+  "need_by_date": "2026-06-19",
+  "lead_time_days": 7,
+  "contingent": true,
+  "status": "draft",
+  "buyer": "Northwind Provisions, Inc.",
+  "pdf_gcs_uri": "gs://faultline-assets/po/po-2026-0042.pdf",
+  "notes": "Contingent purchase order triggered by the Vadodara flood (evt-gdacs-flood-guj-20260610). Split shipment: 3,000 kg by air to Asha Food Ingredients, Navi Mumbai, arriving 2026-06-17; 9,000 kg by sea to Van Doorn Ingredient Works, Rotterdam, arriving 2026-06-26. Price held from standing quote. Becomes binding only on operator approval."
+}

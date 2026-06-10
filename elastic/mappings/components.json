@@ -1,0 +1,10 @@
+{
+  "mappings": {
+    "properties": {
+      "component_id": { "type": "keyword" },
+      "name": { "type": "text" },
+      "category": { "type": "keyword" },
+      "criticality": { "type": "keyword" }
+    }
+  }
+}
