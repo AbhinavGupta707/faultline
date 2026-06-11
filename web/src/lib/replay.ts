@@ -29,11 +29,22 @@ export interface ReplayOptions {
   speed?: number;
 }
 
+/** ?pace=0.6 slows the replay to narration speed for video recording (1 = scripted pace). */
+function urlPace(): number {
+  try {
+    const p = parseFloat(new URLSearchParams(window.location.search).get("pace") ?? "");
+    if (Number.isFinite(p) && p >= 0.3 && p <= 2) return p;
+  } catch {
+    /* no window — default */
+  }
+  return 1;
+}
+
 export function createReplayStream(opts: ReplayOptions = {}): EventStream {
   const handlers = new Set<StreamHandler>();
   const log: WsMessage[] = []; // delivered s2c history — replayed to late subscribers
   const messages = loadReplayMessages();
-  const speed = opts.speed ?? 1;
+  const speed = opts.speed ?? urlPace();
   let stopped = false;
 
   const deliver = (msg: WsMessage) => {
@@ -58,7 +69,7 @@ export function createReplayStream(opts: ReplayOptions = {}): EventStream {
       if (msg.dir === "c2s") {
         // GATE: wait for the operator's decision, or auto-advance after the timeout.
         const gate = armGate();
-        const auto = opts.autoApproveAfterMs ?? Math.max(delta, 9_000);
+        const auto = opts.autoApproveAfterMs ?? Math.max(delta, 9_000 / speed);
         await Promise.race([gate, sleep(auto)]);
         resolveGate = null;
         prev = t; // re-baseline pacing to the scripted decision moment

@@ -423,7 +423,7 @@ export default function MapPanel() {
           {state.activeRunId ?? "—"}
         </div>
         <div className="mono dim" style={{ fontSize: 10, marginTop: 2, opacity: 0.8 }}>
-          Northwind Provisions · F&amp;B · seeded demo co.
+          Northwind Provisions · F&amp;B
         </div>
       </div>
 

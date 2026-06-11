@@ -3,7 +3,7 @@
  *  ("Suez closes 3 weeks", "frost in Minas Gerais") → POST /whatif (+ ws whatif.run).
  *  Results carry the distinct amber SIMULATED frame treatment.
  *  Session C2 owns this folder. */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { AccordionPanel } from "../_shared/accordion";
 import { runWhatif, useFaultline, type WhatifScenario } from "../_shared/store";
 import { humanize, pct } from "../_shared/format";
@@ -57,13 +57,46 @@ export default function WhatIf() {
   const [submitted, setSubmitted] = useState<WhatifScenario | null>(null);
   const [pendingNote, setPendingNote] = useState<string | null>(null);
 
+  // typed place names geocode to coordinates (Maps Geocoding API) — otherwise the event
+  // is written at whatever stale lat/lon sits in the form (the "Minas Gerais in India" bug).
+  const coordsTouched = useRef(false);
+  const geoTimer = useRef<number | null>(null);
+
   function applyPreset(p: Preset) {
     setForm({ ...p.scenario });
     setActivePreset(p.key);
+    coordsTouched.current = false;
   }
   function patch(p: Partial<WhatifScenario>) {
     setForm((f) => ({ ...f, ...p }));
     setActivePreset(null);
+  }
+
+  async function geocode(q: string) {
+    const key = import.meta.env.VITE_MAPS_API_KEY as string | undefined;
+    if (!key) return;
+    try {
+      const r = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(q)}&key=${key}`
+      );
+      const j = (await r.json()) as { results?: Array<{ geometry?: { location?: { lat: number; lng: number } } }> };
+      const loc = j.results?.[0]?.geometry?.location;
+      if (!loc || coordsTouched.current) return;
+      setForm((f) =>
+        f.place_name === q
+          ? { ...f, location: { lat: Number(loc.lat.toFixed(2)), lon: Number(loc.lng.toFixed(2)) } }
+          : f
+      );
+    } catch {
+      /* geocoder unreachable — manual coords still work */
+    }
+  }
+
+  function onPlaceChange(v: string) {
+    patch({ place_name: v });
+    coordsTouched.current = false;
+    if (geoTimer.current) window.clearTimeout(geoTimer.current);
+    if (v.trim().length >= 3) geoTimer.current = window.setTimeout(() => geocode(v.trim()), 700);
   }
 
   async function submit(e: React.FormEvent) {
@@ -126,7 +159,7 @@ export default function WhatIf() {
               className="fl-input"
               placeholder="Place name"
               value={form.place_name ?? ""}
-              onChange={(e) => patch({ place_name: e.target.value })}
+              onChange={(e) => onPlaceChange(e.target.value)}
             />
             <div className="fl-row2">
               <input
@@ -135,7 +168,10 @@ export default function WhatIf() {
                 step="0.01"
                 aria-label="Latitude"
                 value={form.location.lat}
-                onChange={(e) => patch({ location: { ...form.location, lat: Number(e.target.value) } })}
+                onChange={(e) => {
+                  coordsTouched.current = true;
+                  patch({ location: { ...form.location, lat: Number(e.target.value) } });
+                }}
               />
               <input
                 className="fl-input"
@@ -143,8 +179,14 @@ export default function WhatIf() {
                 step="0.01"
                 aria-label="Longitude"
                 value={form.location.lon}
-                onChange={(e) => patch({ location: { ...form.location, lon: Number(e.target.value) } })}
+                onChange={(e) => {
+                  coordsTouched.current = true;
+                  patch({ location: { ...form.location, lon: Number(e.target.value) } });
+                }}
               />
+            </div>
+            <div className="mono" style={{ fontSize: 10, opacity: 0.6, marginTop: 3 }}>
+              coordinates auto-fill from the place name · edit to override
             </div>
           </div>
 

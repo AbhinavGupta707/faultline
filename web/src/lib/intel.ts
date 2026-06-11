@@ -117,15 +117,43 @@ export function tickerItems(events: IntelEvent[]): TickerItem[] {
   }));
 }
 
-/** Live mode: poll the endpoint, fall back to the fixture until it exists. */
+/** The live endpoint (agents /events/recent) returns FLAT lat/lon + `severity` and no
+ *  event_type — a different shape from the world_event fixture. Normalize both; never
+ *  let one malformed record throw the whole batch back to fixtures. */
+function normalizeLive(e: Record<string, unknown>): IntelEvent | null {
+  const loc = (e.location ?? {}) as { lat?: number; lon?: number };
+  const lat = typeof e.lat === "number" ? e.lat : loc.lat;
+  const lon = typeof e.lon === "number" ? e.lon : loc.lon;
+  if (typeof lat !== "number" || typeof lon !== "number") return null;
+  const title = String(e.title ?? "");
+  // derive a short type when the feed doesn't provide one (NOAA: "Flood Warning issued …")
+  const derived = title.split(/ issued | for | at /i)[0].slice(0, 30) || "event";
+  return {
+    id: String(e.id ?? `${lat},${lon},${e.published_at}`),
+    source: String(e.source ?? "feed"),
+    title,
+    eventType: String(e.event_type ?? derived),
+    lon,
+    lat,
+    place: String(e.place_name ?? ""),
+    severity: typeof e.severity_raw === "number" ? e.severity_raw : typeof e.severity === "number" ? e.severity : 0.4,
+    publishedAt: String(e.published_at ?? ""),
+    url: String(e.url ?? ""),
+    simulated: Boolean(e.simulated ?? false),
+  };
+}
+
+/** Live mode: poll the endpoint; the fixture is only a fallback when the endpoint is
+ *  unreachable or empty — live data must never be silently replaced by canned data. */
 export async function fetchRecentEvents(apiBase: string): Promise<IntelEvent[]> {
   try {
-    const res = await fetch(`${apiBase}/events/recent`, { headers: { Accept: "application/json" } });
+    const res = await fetch(`${apiBase}/events/recent?limit=25`, { headers: { Accept: "application/json" } });
     if (!res.ok) throw new Error(String(res.status));
-    const data = (await res.json()) as { events?: RawEvent[] } | RawEvent[];
+    const data = (await res.json()) as { events?: unknown[] } | unknown[];
     const arr = Array.isArray(data) ? data : data.events ?? [];
-    if (!arr.length) return fixtureEvents();
-    return arr.map(normalize);
+    const live = arr.map((e) => normalizeLive(e as Record<string, unknown>)).filter((x): x is IntelEvent => x !== null);
+    if (!live.length) return fixtureEvents();
+    return live;
   } catch {
     return fixtureEvents();
   }
