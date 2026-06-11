@@ -119,10 +119,14 @@ function useMeasure<T extends HTMLElement>() {
  *  - globe idle: slow auto-rotation; flat idle: still.
  *  - a new agent focus flies the camera there and dwells; user interaction pauses both.
  *  - reduced-motion: no loop; the camera jumps to focus, visuals are static. */
-function useMapEngine(view: MapViewKind, reduced: boolean, focus: Focus | null) {
+function useMapEngine(view: MapViewKind, reduced: boolean, focus: Focus | null, holdFocus = false) {
   const cfg = VIEW_CFG[view];
   const [viewState, setViewState] = useState<ViewState>(cfg.initial);
   const [time, setTime] = useState(0);
+
+  // while a run is in progress the camera must HOLD the incident region — no idle drift.
+  const holdRef = useRef(holdFocus);
+  holdRef.current = holdFocus;
 
   const cur = useRef<ViewState>({ ...cfg.initial });
   const target = useRef({ longitude: cfg.initial.longitude, latitude: cfg.initial.latitude, zoom: cfg.initial.zoom });
@@ -168,7 +172,7 @@ function useMapEngine(view: MapViewKind, reduced: boolean, focus: Focus | null) 
       last = ts;
       const tnow = (ts - start) / 1000;
 
-      const idle = ts > dwellUntil.current && !interacting.current;
+      const idle = ts > dwellUntil.current && !interacting.current && !holdRef.current;
       if (cfg.rotate && idle) {
         // idle = slow longitude spin ONLY; zoom and latitude are preserved (never
         // auto-return to a default), so user zoom and fly-to zoom both persist.
@@ -242,7 +246,8 @@ export default function MapPanel() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const state = useMemo(() => reduceMapState(messages), [messages]);
-  const { viewState, time, onViewStateChange, flyTo } = useMapEngine(view, reduced, state.focus);
+  const runActive = state.phase !== "idle" && state.phase !== "done";
+  const { viewState, time, onViewStateChange, flyTo } = useMapEngine(view, reduced, state.focus, runActive);
 
   // live intelligence feed — deterministic fixture in replay, polled in live mode
   const [events, setEvents] = useState<IntelEvent[]>(() => fixtureEvents());
@@ -333,10 +338,15 @@ export default function MapPanel() {
         position: "relative",
         height: "100%",
         overflow: "hidden",
-        background: "radial-gradient(ellipse 80% 70% at 42% 38%, #0c1a2c 0%, var(--base) 62%)",
+        background:
+          view === "globe"
+            ? // deep space + a soft atmospheric halo behind the planet
+              "radial-gradient(ellipse 56% 56% at 50% 47%, rgba(64,170,200,0.12) 0%, rgba(24,70,110,0.06) 40%, transparent 64%), radial-gradient(ellipse 130% 120% at 50% 45%, #070e19 0%, #03070d 75%)"
+            : "radial-gradient(ellipse 80% 70% at 42% 38%, #0c1a2c 0%, var(--base) 62%)",
       }}
       aria-label="Living supply-chain map"
     >
+      {view === "globe" && <Stars w={size.w} h={size.h} />}
       {size.w > 0 && (
         <DeckGL
           views={deckView}
@@ -411,6 +421,9 @@ export default function MapPanel() {
         <div className="eyebrow">Living Map</div>
         <div className="mono dim" style={{ fontSize: 11, marginTop: 3 }}>
           {state.activeRunId ?? "—"}
+        </div>
+        <div className="mono dim" style={{ fontSize: 10, marginTop: 2, opacity: 0.8 }}>
+          Northwind Provisions · F&amp;B · seeded demo co.
         </div>
       </div>
 
@@ -497,12 +510,38 @@ function PhaseStepper({ steps, activeStep }: { steps: { id: string; status: stri
   );
 }
 
+/** Deterministic starfield behind the globe (deep-space feel; pure CSS box-shadows). */
+function Stars({ w, h }: { w: number; h: number }) {
+  const shadow = useMemo(() => {
+    if (!w || !h) return "";
+    let s = 1234567;
+    const rnd = () => ((s = (s * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+    const parts: string[] = [];
+    for (let i = 0; i < 130; i++) {
+      const x = Math.round(rnd() * w);
+      const y = Math.round(rnd() * h);
+      const a = (0.1 + rnd() * 0.45).toFixed(2);
+      const teal = rnd() < 0.12;
+      const blur = rnd() < 0.25 ? 2 : 1;
+      parts.push(`${x}px ${y}px ${blur}px ${teal ? `rgba(45,212,191,${a})` : `rgba(214,228,247,${a})`}`);
+    }
+    return parts.join(",");
+  }, [w, h]);
+  if (!shadow) return null;
+  return (
+    <div aria-hidden style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
+      <div style={{ position: "absolute", width: 1, height: 1, borderRadius: "50%", boxShadow: shadow }} />
+    </div>
+  );
+}
+
 function Legend() {
   const items: [string, string][] = [
     ["var(--graph-edge)", "Supply route"],
     ["var(--risk)", "Disruption"],
     ["var(--signal)", "Agent focus"],
     ["var(--secured)", "Secured"],
+    ["rgba(138,155,179,0.75)", "Monitored event"],
   ];
   return (
     <div style={{ position: "absolute", bottom: TICKER_HEIGHT + 12, left: 16, display: "flex", flexDirection: "column", gap: 5, pointerEvents: "none" }}>

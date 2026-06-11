@@ -69,6 +69,20 @@ export default function MissionControl() {
       <div style={{ marginBottom: 12 }}>
         <div className="fl-eyebrow">Current goal</div>
         <div style={{ fontSize: 15, lineHeight: 1.35, marginTop: 3 }}>{goal}</div>
+        {/* live-idle: make "nothing is happening" read as the vigilance it actually is */}
+        {!step && (
+          <div
+            className="mono"
+            style={{
+              marginTop: 8, fontSize: 11, lineHeight: 1.5, color: "var(--ink-dim, #8A9BB3)",
+              borderLeft: "2px solid rgba(45,212,191,0.45)", paddingLeft: 9,
+            }}
+          >
+            <span style={{ color: "var(--graph-edge, #2DD4BF)" }}>●</span> Background monitor active — the
+            agent rescans the live world every ~45&nbsp;s and opens a run here the moment an event
+            threatens a supplier. Try a What-If below, or ▶ WATCH DEMO above.
+          </div>
+        )}
       </div>
 
       {/* numbered live plan */}

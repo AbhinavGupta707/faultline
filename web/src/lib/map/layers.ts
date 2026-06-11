@@ -1,7 +1,7 @@
 /** Living-map layer builder (Session C1 owns — THE hero).
  *  Pure function: (MapState, time, reducedMotion) → deck.gl Layer[]. Every visual is
  *  derived from the semantic stream via mapModel; nothing here talks to the network. */
-import { ArcLayer, GeoJsonLayer, LineLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
+import { ArcLayer, GeoJsonLayer, LineLayer, PathLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
 import { SimpleMeshLayer } from "@deck.gl/mesh-layers";
 import { CollisionFilterExtension } from "@deck.gl/extensions";
 import { COORDINATE_SYSTEM } from "@deck.gl/core";
@@ -24,6 +24,79 @@ function angDeg(lon1: number, lat1: number, lon2: number, lat2: number): number 
     Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * D2R) * Math.cos(lat2 * D2R) * Math.sin(dLon / 2) ** 2;
   return (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))) / D2R;
 }
+/** ArcLayer does not render under GlobeView (its arc interpolation happens in a planar
+ *  common space — the geometry ends up inside the sphere and is depth-culled). So on the
+ *  globe, supply routes are PathLayers along precomputed great-circle waypoints, lifted
+ *  off the surface so they read as flight-lines. Cached per edge — geometry is static. */
+const gcCache = new Map<string, [number, number, number][]>();
+function gcPath(key: string, from: [number, number], to: [number, number]): [number, number, number][] {
+  const hit = gcCache.get(key);
+  if (hit) return hit;
+  const toV = (lon: number, lat: number) => {
+    const p = lat * D2R, l = lon * D2R;
+    return [Math.cos(p) * Math.cos(l), Math.cos(p) * Math.sin(l), Math.sin(p)] as const;
+  };
+  const a = toV(from[0], from[1]);
+  const b = toV(to[0], to[1]);
+  const dot = Math.min(1, Math.max(-1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2]));
+  const w = Math.acos(dot) || 1e-6;
+  const sw = Math.sin(w);
+  // lift scales with arc length: short hops hug the surface, transcontinental routes soar
+  const lift = EARTH_RADIUS * (0.012 + 0.085 * (w / Math.PI));
+  const N = 48;
+  const pts: [number, number, number][] = [];
+  for (let i = 0; i < N; i++) {
+    const t = i / (N - 1);
+    const s1 = Math.sin((1 - t) * w) / sw;
+    const s2 = Math.sin(t * w) / sw;
+    const x = s1 * a[0] + s2 * b[0];
+    const y = s1 * a[1] + s2 * b[1];
+    const z = s1 * a[2] + s2 * b[2];
+    pts.push([Math.atan2(y, x) / D2R, Math.atan2(z, Math.hypot(x, y)) / D2R, Math.sin(t * Math.PI) * lift]);
+  }
+  gcCache.set(key, pts);
+  return pts;
+}
+
+const strHash = (s: string) => {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+};
+
+interface FlowDot {
+  position: [number, number, number];
+  color: RGBA;
+  size: number;
+}
+/** Energy pulses travelling along the routes: bright coral on hot exposure paths,
+ *  slow faint teal on healthy ones — the "alive" texture the flat arcs get from pulsing. */
+function flowData(
+  paths: Array<{ id: string; hot: boolean; path: [number, number, number][] }>,
+  time: number
+): FlowDot[] {
+  const out: FlowDot[] = [];
+  for (const e of paths) {
+    const n = e.hot ? 3 : 1;
+    const period = e.hot ? 2.4 : 6.5 + (strHash(e.id) % 30) / 10;
+    const phase = (strHash(e.id) % 100) / 100;
+    for (let k = 0; k < n; k++) {
+      const f = fract(time / period + k / n + phase);
+      const idx = f * (e.path.length - 1);
+      const i0 = Math.floor(idx);
+      const t = idx - i0;
+      const p0 = e.path[i0];
+      const p1 = e.path[Math.min(i0 + 1, e.path.length - 1)];
+      out.push({
+        position: [p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t, p0[2] + (p1[2] - p0[2]) * t],
+        color: e.hot ? rgba(CORAL, 235) : rgba(TEAL, 130),
+        size: e.hot ? 3.6 : 2.1,
+      });
+    }
+  }
+  return out;
+}
+
 // one shared sphere mesh for the globe ocean (built lazily, reused across renders)
 let sphereMesh: SphereGeometry | null = null;
 const getSphere = () =>
@@ -389,17 +462,51 @@ export function buildLayers(
 
   if (globe) {
     // opaque ocean sphere just under the land — writes depth so the back of the globe
-    // (its arcs, nodes, ripples) is correctly hidden.
+    // (its arcs, nodes, ripples) is correctly hidden. Deep-water blue, not flat black.
     const ocean = new SimpleMeshLayer({
       id: "globe-ocean",
       data: [{ position: [0, 0, 0] }],
       mesh: getSphere(),
       coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
       getPosition: (d: { position: number[] }) => d.position as [number, number, number],
-      getColor: [8, 16, 28],
+      getColor: [12, 27, 48],
       parameters: { depthTest: true },
     });
-    return [ocean, land, ambientLayer, arcBloom, arcs, rippleLayer, halos, leaderLines, nodes, text];
+    // ArcLayer is a no-show under GlobeView → lifted great-circle PathLayers instead.
+    const pathData = edgeData.map((e) => ({ ...e, path: gcPath(e.id, e.from, e.to) }));
+    const routeBloom = new PathLayer({
+      id: "route-bloom",
+      data: pathData,
+      getPath: (d: any) => d.path,
+      getColor: (d: any) => (d.hot ? rgba(CORAL, 55) : rgba(TEAL, 32)),
+      getWidth: (d: any) => (d.hot ? 8.5 : 5.5),
+      widthUnits: "pixels",
+      jointRounded: true,
+      updateTriggers: { getColor: [state] },
+      parameters: { depthTest },
+    });
+    const routeCore = new PathLayer({
+      id: "route-core",
+      data: pathData,
+      getPath: (d: any) => d.path,
+      getColor: (d: any) => (d.hot ? rgba(CORAL, hotAlpha) : rgba(TEAL, 155)),
+      getWidth: (d: any) => (d.hot ? 2.4 : 1.3),
+      widthUnits: "pixels",
+      jointRounded: true,
+      updateTriggers: { getColor: [hotAlpha, state] },
+      parameters: { depthTest },
+    });
+    const flow = new ScatterplotLayer({
+      id: "route-flow",
+      data: reduced ? [] : flowData(pathData, time),
+      getPosition: (d: FlowDot) => d.position,
+      getRadius: (d: FlowDot) => d.size,
+      radiusUnits: "pixels",
+      stroked: false,
+      getFillColor: (d: FlowDot) => d.color,
+      parameters: { depthTest },
+    });
+    return [ocean, land, ambientLayer, routeBloom, routeCore, flow, rippleLayer, halos, leaderLines, nodes, text];
   }
 
   return [land, ambientLayer, arcBloom, arcs, rippleLayer, halos, leaderLines, nodes, text];
