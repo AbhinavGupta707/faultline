@@ -7,3 +7,4 @@ mcp
 jsonschema
 pytest
 httpx
+google-cloud-bigquery>=3.20   # depth analytics: /analytics/summary reads faultline.* in BigQuery
