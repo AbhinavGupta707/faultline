@@ -58,7 +58,7 @@ const FLAT_VIEW: ViewState = {
 const GLOBE_VIEW: ViewState = {
   longitude: 24,
   latitude: 16,
-  zoom: 2.8, // fills ~85% of the panel height at 1440 (tuned visually)
+  zoom: 2.45, // comfortably fills the panel without cropping poles (human-tuned)
   pitch: 0,
   bearing: 0,
   minZoom: 0.5,
@@ -67,7 +67,7 @@ const GLOBE_VIEW: ViewState = {
 
 const VIEW_CFG = {
   flat: { initial: FLAT_VIEW, focusZoom: 2.3, rotate: false },
-  globe: { initial: GLOBE_VIEW, focusZoom: 2.8, rotate: true },
+  globe: { initial: GLOBE_VIEW, focusZoom: 2.7, rotate: true },
 } as const;
 
 const ROTATE_DEG_PER_SEC = 3.2;
@@ -200,7 +200,7 @@ function useMapEngine(view: MapViewKind, reduced: boolean, focus: Focus | null) 
     const is = params.interactionState ?? {};
     interacting.current = !!(is.isDragging || is.isZooming || is.isPanning || is.isRotating);
     if (is.isZooming) userZoomed.current = true; // user zoom wins from here on
-    if (interacting.current) dwellUntil.current = (typeof performance !== "undefined" ? performance.now() : 0) + 9_000;
+    if (interacting.current) dwellUntil.current = (typeof performance !== "undefined" ? performance.now() : 0) + 3_500;
     setViewState({ ...cfg.initial, ...vs });
   }, [cfg.initial]);
 

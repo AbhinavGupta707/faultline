@@ -14,6 +14,14 @@ import { API_BASE } from "./lib/api";
 import { useEventStream } from "./lib/useStream";
 import { reduceMapState } from "./lib/mapModel";
 
+function isReplay(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).get("demo") === "replay";
+  } catch {
+    return false;
+  }
+}
+
 export default function App() {
   const { messages, send } = useEventStream();
   const state = useMemo(() => reduceMapState(messages), [messages]);
@@ -44,6 +52,20 @@ export default function App() {
         </span>
 
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          {/* always-visible demo entry point — judges must never wonder how to see the show */}
+          <a
+            href={isReplay() ? window.location.pathname : "?demo=replay"}
+            title={isReplay() ? "Return to live mode — real world events, real agent runs" : "Play a scripted end-to-end incident (70s)"}
+            style={{
+              textDecoration: "none", fontSize: 11, letterSpacing: "0.08em", fontWeight: 600,
+              padding: "5px 12px", borderRadius: 14, whiteSpace: "nowrap",
+              color: isReplay() ? "var(--ink, #E6EDF6)" : "#0A1422",
+              background: isReplay() ? "transparent" : "var(--signal, #F5B544)",
+              border: "1px solid var(--signal, #F5B544)",
+            }}
+          >
+            {isReplay() ? "● GO LIVE" : "▶ WATCH DEMO"}
+          </a>
           <span className={"chip " + (state.feedsOk ? "ok" : "err")}>
             <span className="dot" /> feeds
           </span>
@@ -61,8 +83,14 @@ export default function App() {
         <div style={{ position: "relative", minWidth: 0, minHeight: 0 }}>
           <MapPanel />
           {/* voice affordance sits bottom-center, lifted clear of the intel ticker strip */}
-          <div style={{ position: "absolute", bottom: 44, left: "50%", transform: "translateX(-50%)", zIndex: 6 }}>
+          <div
+            title="Voice console — push-to-talk commands and voice approval (Gemini Live)"
+            style={{ position: "absolute", bottom: 44, left: "50%", transform: "translateX(-50%)", zIndex: 6, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}
+          >
             <VoicePanel wsUrl={import.meta.env.VITE_VOICE_WS_URL ?? ""} onIntent={onIntent} disabled />
+            <span className="mono dim" style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.75 }}>
+              voice · push-to-talk
+            </span>
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, minHeight: 0, overflow: "auto" }}>

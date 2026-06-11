@@ -1,5 +1,6 @@
 /** First-open intro overlay (C2). Three bullets + a "Watch a live incident" CTA.
- *  Dismissal is remembered in localStorage; it NEVER shows during ?demo=replay so the
+ *  Dismissal is remembered per browser session (sessionStorage) so fresh visits — e.g. a
+ *  judge opening the link — always get oriented; it NEVER shows during ?demo=replay so the
  *  recording path is untouched. Rendered through a portal to document.body because the
  *  shell (App.tsx) is C1's — mounted from Mission Control. */
 import { useEffect, useState } from "react";
@@ -16,7 +17,7 @@ function isReplayRecording(): boolean {
 }
 function alreadySeen(): boolean {
   try {
-    return window.localStorage.getItem(SEEN_KEY) === "1";
+    return window.sessionStorage.getItem(SEEN_KEY) === "1";
   } catch {
     return false;
   }
@@ -39,7 +40,7 @@ export default function IntroOverlay() {
 
   function dismiss() {
     try {
-      window.localStorage.setItem(SEEN_KEY, "1");
+      window.sessionStorage.setItem(SEEN_KEY, "1");
     } catch {
       /* private mode — fine, it just shows again next time */
     }
