@@ -4,6 +4,16 @@
 
 ## C2 — Panels (branch ws/c2-panels)
 
+2026-06-10 · C2 · Accordion UX round 2 (Chrome-verified, 0 console errors, build green).
+(1) Explicit collapse: open panels get a ˄ chevron + clickable title that collapse them;
+all-collapsed (all strips) is allowed. Renamed the follow control to a clear switch
+"Auto-follow: On/Off" (role=switch) so it's not mistaken for navigation; OFF keeps the
+current panel pinned. (2) Long-step feedback: the active Mission Control step shows a
+shimmering gerund + live elapsed seconds ("Tracing… 38s", reduced-motion-safe) so a slow
+step never reads as stuck. Verified collapse/expand/title-toggle/auto-follow toggle live in
+the connected browser.
+
+
 2026-06-10 · C2 · UI polish sprint done (5 items, committed individually, tsc + vite build
 green per item, replay stable for recording — full ?demo=replay run has 0 console errors).
 (1) Accordion rail + follow-the-agent (default ON): one run-phase panel expanded, others
