@@ -1,15 +1,15 @@
-/** Accordion rail + follow-the-agent mode (C2 panels).
+/** Accordion rail + auto-follow mode (C2 panels).
  *
  *  The shell (App.tsx, C1-owned) stacks the four panels in a column; we can't edit it,
  *  so the accordion is implemented inside the panels themselves: each renders either a
- *  one-line summary strip (collapsed) or its full body (expanded). Exactly one of the
- *  three run-phase panels is expanded at a time.
+ *  one-line summary strip (collapsed) or its full body (expanded).
  *
- *  Follow mode (default ON) auto-expands the panel matching the live run phase:
+ *  AUTO-FOLLOW (default ON) auto-expands the panel matching the live run phase:
  *    scan/trace → Mission Control · ranked_exposures → Action Board ·
  *    approval gate → Mission Control (gate) · brief → Decision Log.
- *  A manual click on any strip pins that panel and turns follow OFF; the follow control
- *  in the expanded header resumes it. What-If is collapsible but never a follow target. */
+ *  Turning AUTO-FOLLOW OFF (header toggle) or opening/closing a panel by hand switches to
+ *  manual control: clicking a strip opens it; clicking an open panel's header (or its ˄
+ *  chevron) collapses it. All panels may be collapsed at once (everything shows as strips). */
 
 import { useSyncExternalStore, type ReactNode } from "react";
 import { useFaultline, type FaultlineState } from "./store";
@@ -17,22 +17,30 @@ import { useFaultline, type FaultlineState } from "./store";
 export type PanelId = "mission" | "action" | "decision" | "whatif";
 
 interface UiState {
-  mode: "follow" | "manual";
-  manualPanel: PanelId;
+  autoFollow: boolean;
+  /** Which panel is open in manual mode; null = all collapsed. */
+  manualPanel: PanelId | null;
 }
 
-let ui: UiState = { mode: "follow", manualPanel: "mission" };
+let ui: UiState = { autoFollow: true, manualPanel: "mission" };
 const uiListeners = new Set<() => void>();
 function emitUi() {
   for (const l of uiListeners) l();
 }
 
+/** Open a panel by hand (from its collapsed strip). Drops out of auto-follow. */
 export function pinPanel(id: PanelId) {
-  ui = { mode: "manual", manualPanel: id };
+  ui = { autoFollow: false, manualPanel: id };
   emitUi();
 }
-export function enableFollow() {
-  ui = { ...ui, mode: "follow" };
+/** Collapse the currently-open panel. Drops out of auto-follow; all panels become strips. */
+export function collapsePanel() {
+  ui = { autoFollow: false, manualPanel: null };
+  emitUi();
+}
+/** Flip AUTO-FOLLOW. When turning OFF we keep the currently-open panel pinned. */
+export function setAutoFollow(on: boolean, currentId?: PanelId) {
+  ui = on ? { ...ui, autoFollow: true } : { autoFollow: false, manualPanel: currentId ?? ui.manualPanel };
   emitUi();
 }
 
@@ -65,12 +73,11 @@ export function followTarget(s: FaultlineState): PanelId {
 export function usePanelOpen(id: PanelId): boolean {
   const data = useFaultline();
   const u = useUi();
-  const open = u.mode === "follow" ? followTarget(data) === id : u.manualPanel === id;
-  return open;
+  return u.autoFollow ? followTarget(data) === id : u.manualPanel === id;
 }
 
-export function useFollowMode(): "follow" | "manual" {
-  return useUi().mode;
+export function useAutoFollow(): boolean {
+  return useUi().autoFollow;
 }
 
 /** The accordion shell for one panel: strip when collapsed, full panel when open. */
@@ -88,10 +95,9 @@ export function AccordionPanel({
   children: ReactNode;
 }) {
   const open = usePanelOpen(id);
-  const mode = useFollowMode();
+  const autoFollow = useAutoFollow();
 
   if (!open) {
-    const isFollowing = mode === "follow";
     return (
       <button
         type="button"
@@ -101,9 +107,9 @@ export function AccordionPanel({
         aria-label={`Expand ${title}`}
       >
         <span className="fl-strip__title">{title}</span>
-        {isFollowing && <span className="fl-strip__dot" aria-hidden />}
+        {autoFollow && <span className="fl-strip__dot" aria-hidden />}
         <span className="fl-strip__summary">{strip}</span>
-        <span className="fl-strip__chev" aria-hidden>▸</span>
+        <span className="fl-strip__chev" aria-hidden>▾</span>
       </button>
     );
   }
@@ -111,29 +117,46 @@ export function AccordionPanel({
   return (
     <section className="fl-panel fl-panel--open">
       <div className="fl-panel__head">
-        <span className="fl-panel__title">{title}</span>
+        <button
+          type="button"
+          className="fl-panel__titlebtn"
+          onClick={() => collapsePanel()}
+          aria-expanded
+          title={`Collapse ${title}`}
+        >
+          <span className="fl-panel__title">{title}</span>
+        </button>
         <span style={{ marginLeft: "auto" }} />
         {meta != null && <span className="fl-panel__meta">{meta}</span>}
-        <FollowControl currentId={id} />
+        <AutoFollowToggle currentId={id} />
+        <button
+          type="button"
+          className="fl-panel__collapse"
+          onClick={() => collapsePanel()}
+          title={`Collapse ${title}`}
+          aria-label={`Collapse ${title}`}
+        >
+          ˄
+        </button>
       </div>
       <div className="fl-panel__body">{children}</div>
     </section>
   );
 }
 
-function FollowControl({ currentId }: { currentId: PanelId }) {
-  const mode = useFollowMode();
-  const following = mode === "follow";
+function AutoFollowToggle({ currentId }: { currentId: PanelId }) {
+  const on = useAutoFollow();
   return (
     <button
       type="button"
-      className={`fl-follow ${following ? "fl-follow--on" : ""}`}
-      onClick={() => (following ? pinPanel(currentId) : enableFollow())}
-      title={following ? "Following the agent — click to pin this panel" : "Resume following the agent"}
-      aria-pressed={following}
+      className={`fl-follow ${on ? "fl-follow--on" : ""}`}
+      onClick={() => setAutoFollow(!on, currentId)}
+      title={on ? "Auto-follow the agent's current step — click to turn off" : "Turn on auto-follow"}
+      aria-pressed={on}
+      role="switch"
     >
-      <span className={`fl-dot ${following ? "fl-dot--live" : "fl-dot--idle"}`} />
-      {following ? "Following" : "Follow"}
+      <span className={`fl-dot ${on ? "fl-dot--live" : "fl-dot--idle"}`} />
+      Auto-follow: {on ? "On" : "Off"}
     </button>
   );
 }

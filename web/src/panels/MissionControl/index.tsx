@@ -74,14 +74,8 @@ export default function MissionControl() {
       {/* numbered live plan */}
       <div className="fl-eyebrow" style={{ marginBottom: 5 }}>Plan</div>
       <ol className="fl-plan" style={{ listStyle: "none", margin: 0, padding: 0 }}>
-        {steps.map((step, i) => (
-          <li key={step.id} className={`fl-step fl-step--${step.status}`}>
-            <span className="fl-step__no">{i + 1}</span>
-            <span className={`fl-step__tick ${step.status === "pending" ? "fl-step__tick--idle" : ""}`}>
-              {step.status === "done" ? "✓" : step.status === "active" ? "▸" : step.status === "error" ? "✕" : "·"}
-            </span>
-            <span className="fl-step__label">{step.label}</span>
-          </li>
+        {steps.map((st, i) => (
+          <StepRow key={st.id} step={st} index={i} />
         ))}
       </ol>
 
@@ -125,6 +119,45 @@ export default function MissionControl() {
       )}
       </AccordionPanel>
     </>
+  );
+}
+
+const GERUND: Record<string, string> = {
+  scan: "Scanning",
+  trace: "Tracing",
+  assess: "Quantifying",
+  approve: "Awaiting approval",
+  resource: "Re-sourcing",
+  verify: "Verifying",
+};
+
+/** One plan-step row. While active it shows a shimmering gerund + an elapsed-seconds
+ *  counter ("Tracing… 38s") so a slow live step never reads as stuck. */
+function StepRow({ step, index }: { step: PlanStep; index: number }) {
+  const active = step.status === "active";
+  const [secs, setSecs] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const start = performance.now();
+    setSecs(0);
+    const t = setInterval(() => setSecs(Math.floor((performance.now() - start) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, [active, step.id]);
+
+  const tick = step.status === "done" ? "✓" : active ? "▸" : step.status === "error" ? "✕" : "·";
+  return (
+    <li className={`fl-step fl-step--${step.status}`}>
+      <span className="fl-step__no">{index + 1}</span>
+      <span className={`fl-step__tick ${step.status === "pending" ? "fl-step__tick--idle" : ""}`}>{tick}</span>
+      {active ? (
+        <>
+          <span className="fl-step__label fl-step__live">{GERUND[step.id] ?? step.label}…</span>
+          <span className="fl-step__elapsed">{secs}s</span>
+        </>
+      ) : (
+        <span className="fl-step__label">{step.label}</span>
+      )}
+    </li>
   );
 }
 

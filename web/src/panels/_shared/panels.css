@@ -33,6 +33,36 @@
   color: var(--ink-dim);
   letter-spacing: 0.02em;
 }
+/* clickable title region (collapses the panel) */
+.fl-panel__titlebtn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+.fl-panel__titlebtn:hover .fl-panel__title { color: var(--ink); }
+.fl-panel__titlebtn:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; border-radius: 3px; }
+/* explicit collapse chevron on the right of an open header */
+.fl-panel__collapse {
+  margin-left: 8px;
+  width: 26px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--hairline);
+  border-radius: 5px;
+  color: var(--ink-dim);
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.fl-panel__collapse:hover { border-color: var(--ink-dim); color: var(--ink); background: rgba(255, 255, 255, 0.03); }
+.fl-panel__collapse:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
 .fl-panel__body { padding: 12px; overflow: auto; }
 .fl-panel--open { animation: fl-panel-in 0.28s ease; }
 @keyframes fl-panel-in {
@@ -261,6 +291,28 @@
 .fl-step--active { background: rgba(245, 181, 68, 0.08); }
 .fl-step--active .fl-step__label { color: var(--signal); font-weight: 600; }
 .fl-step--active .fl-step__no { color: var(--signal); }
+/* active-step live label: "Tracing… 38s" with a shimmer so a slow step never reads as stuck */
+.fl-step__live {
+  font-weight: 600;
+  background: linear-gradient(100deg, var(--signal) 30%, #fff3d6 50%, var(--signal) 70%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: fl-shimmer 1.9s linear infinite;
+}
+.fl-step__elapsed {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--signal);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+@keyframes fl-shimmer {
+  0% { background-position: 220% 0; }
+  100% { background-position: -120% 0; }
+}
 .fl-step--done .fl-step__label { color: var(--ink); }
 .fl-step__tick { font-family: var(--font-mono); font-size: 11px; width: 12px; }
 .fl-step--done .fl-step__tick { color: var(--secured); }
