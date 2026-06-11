@@ -298,26 +298,6 @@ export default function MapPanel() {
       {/* bottom-left — legend */}
       <Legend />
 
-      {/* bottom — status note */}
-      {state.statusNote && (
-        <div
-          className="mono"
-          style={{
-            position: "absolute",
-            bottom: 14,
-            left: "50%",
-            transform: "translateX(-50%)",
-            maxWidth: "62%",
-            textAlign: "center",
-            fontSize: 11.5,
-            color: "var(--ink-dim)",
-            pointerEvents: "none",
-          }}
-        >
-          {state.statusNote}
-        </div>
-      )}
-
       {/* approval gate — appears only while the run is paused on the operator */}
       {state.approvalPending && (
         <div className="fade-up" style={{ position: "absolute", top: 16, left: "50%", transform: "translateX(-50%)", maxWidth: "56%" }}>
