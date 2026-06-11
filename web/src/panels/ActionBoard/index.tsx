@@ -4,7 +4,8 @@
  *  A live-call panel renders call_event messages (Negotiator / Session E backend) to contract.
  *  Session C2 owns this folder. */
 import { useEffect, useRef, useState } from "react";
-import { Panel, StatusPill, Empty } from "../_shared/ui";
+import { StatusPill, Empty } from "../_shared/ui";
+import { AccordionPanel } from "../_shared/accordion";
 import {
   useFaultline,
   decideApproval,
@@ -14,15 +15,36 @@ import {
   type CallEvent,
   type VerifyResult,
 } from "../_shared/store";
-import { usd, days, pct, humanize } from "../_shared/format";
+import { usd, usdCompact, days, pct, humanize } from "../_shared/format";
+import { CountUp } from "../_shared/anim";
+import { focusOnMap, type FocusDetail } from "../_shared/focus";
 
 export default function ActionBoard() {
   const s = useFaultline();
   const exposures = [...s.exposures].sort((a, b) => a.rank - b.rank);
   const hasCall = s.callEvents.length > 0;
+  const atRiskTotal = exposures
+    .filter((e) => e.status === "at_risk")
+    .reduce((sum, e) => sum + e.dollars_at_risk_usd, 0);
+  const securedCount = exposures.filter((e) => e.status === "secured").length;
+
+  const strip = exposures.length ? (
+    <>
+      <b>{exposures.length}</b> exposures
+      {atRiskTotal > 0 ? <> · <span className="risk">{usdCompact(atRiskTotal)} at risk</span></> : null}
+      {securedCount ? ` · ${securedCount} secured` : ""}
+    </>
+  ) : (
+    <>awaiting exposures</>
+  );
 
   return (
-    <Panel title="Action Board" meta={exposures.length ? `${exposures.length} exposures` : undefined}>
+    <AccordionPanel
+      id="action"
+      title="Action Board"
+      meta={exposures.length ? `${exposures.length} exposures` : undefined}
+      strip={strip}
+    >
       {exposures.length ? (
         <div className="fl-exps">
           {exposures.map((e) => (
@@ -33,6 +55,7 @@ export default function ActionBoard() {
               po={s.posByExposure[e.exposure_id]}
               verify={s.verifyByExposure[e.exposure_id]}
               pendingApprovalId={pendingApprovalFor(s, e.exposure_id)}
+              focus={focusForExposure(s, e)}
             />
           ))}
         </div>
@@ -46,7 +69,7 @@ export default function ActionBoard() {
           <LiveCall events={s.callEvents} />
         </div>
       )}
-    </Panel>
+    </AccordionPanel>
   );
 }
 
@@ -56,12 +79,14 @@ function ExposureRow({
   po,
   verify,
   pendingApprovalId,
+  focus,
 }: {
   exp: Exposure;
   alternates?: AlternatesPayload;
   po?: DraftPO;
   verify?: VerifyResult;
   pendingApprovalId?: string;
+  focus?: FocusDetail | null;
 }) {
   const [open, setOpen] = useState(false);
   const expandable = Boolean(alternates || po || verify || exp.rationale);
@@ -71,12 +96,19 @@ function ExposureRow({
       <button
         type="button"
         className="fl-exp__row"
-        onClick={() => expandable && setOpen((o) => !o)}
+        onClick={() => {
+          if (focus) focusOnMap(focus); // fly the map to the disruption
+          if (expandable) setOpen((o) => !o);
+        }}
         aria-expanded={open}
+        title={focus ? "Open details · focus the map on this disruption" : undefined}
       >
         <span className="fl-exp__rank">#{exp.rank}</span>
         <span>
-          <span className="fl-exp__name">{exp.product_name}</span>
+          <span className="fl-exp__name">
+            {exp.product_name}
+            {focus && <span className="fl-exp__locate" aria-hidden>⌖</span>}
+          </span>
           <span className="fl-exp__sub" style={{ display: "block" }}>{humanize(exp.component_id.replace(/^cmp-/, ""))}</span>
         </span>
         <span className="fl-exp__metric">
@@ -84,11 +116,19 @@ function ExposureRow({
           <span className="k">cover</span>
         </span>
         <span className="fl-exp__metric">
-          <span className={`v ${exp.status === "at_risk" ? "v--risk" : ""}`}>{usd(exp.dollars_at_risk_usd)}</span>
+          <span className={`v ${exp.status === "at_risk" ? "v--risk" : ""}`}>
+            <CountUp value={exp.dollars_at_risk_usd} format={usd} />
+          </span>
           <span className="k">at risk</span>
         </span>
         <StatusPill status={exp.status} />
-        <span className={`fl-exp__caret ${open ? "fl-exp__caret--open" : ""}`}>{expandable ? "›" : ""}</span>
+        {expandable ? (
+          <span className={`fl-exp__caret ${open ? "fl-exp__caret--open" : ""}`} aria-hidden>
+            ›
+          </span>
+        ) : (
+          <span />
+        )}
       </button>
 
       {open && (
@@ -275,4 +315,20 @@ function pendingApprovalFor(s: ReturnType<typeof useFaultline>, exposureId: stri
 
 function riskColor(level: string): string {
   return level === "high" ? "var(--risk)" : level === "medium" ? "var(--watch)" : "var(--secured)";
+}
+
+/** Where the map should fly when this exposure's row is clicked: the disruption
+ *  epicenter (root-cause world-event), falling back to the chokepoint supplier. */
+function focusForExposure(s: ReturnType<typeof useFaultline>, e: Exposure): FocusDetail | null {
+  const ev = s.eventsById[e.root_cause_event_id];
+  if (ev?.location) {
+    return { lat: ev.location.lat, lon: ev.location.lon, label: e.product_name, url: ev.url };
+  }
+  const path = s.exposurePaths.find((p) => e.path_ids?.includes(p.path_id));
+  const node =
+    path?.supplier_chain.find((n) => n.supplier_id === e.chokepoint_supplier_id) ?? path?.supplier_chain[0];
+  if (node?.location) {
+    return { lat: node.location.lat, lon: node.location.lon, label: e.product_name };
+  }
+  return null;
 }

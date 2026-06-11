@@ -34,6 +34,119 @@
   letter-spacing: 0.02em;
 }
 .fl-panel__body { padding: 12px; overflow: auto; }
+.fl-panel--open { animation: fl-panel-in 0.28s ease; }
+@keyframes fl-panel-in {
+  from { opacity: 0.4; transform: translateY(-3px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ── first-open intro overlay ───────────────────────────────────────────────── */
+.fl-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: rgba(6, 13, 23, 0.8);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: fl-fade 0.3s ease;
+  padding: 20px;
+}
+@keyframes fl-fade { from { opacity: 0; } to { opacity: 1; } }
+.fl-intro__card {
+  width: min(440px, 92vw);
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 28px 28px 20px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  animation: fl-intro-rise 0.34s ease;
+}
+@keyframes fl-intro-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.fl-intro__brand { font-weight: 600; letter-spacing: 0.14em; font-size: 18px; color: var(--ink); }
+.fl-intro__tag {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); margin-top: 4px;
+}
+.fl-intro__bullets { list-style: none; margin: 18px 0 22px; padding: 0; display: flex; flex-direction: column; gap: 13px; }
+.fl-intro__bullets li { position: relative; padding-left: 22px; font-size: 14px; line-height: 1.4; color: var(--ink); }
+.fl-intro__bullets li::before {
+  content: ""; position: absolute; left: 3px; top: 7px; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--signal); box-shadow: 0 0 8px var(--signal);
+}
+.fl-intro__cta { font-size: 14px; padding: 11px; text-align: center; }
+.fl-intro__skip {
+  background: none; border: none; color: var(--ink-dim); font-size: 12px; cursor: pointer;
+  margin: 12px auto 0; padding: 4px 8px;
+}
+.fl-intro__skip:hover { color: var(--ink); }
+
+/* ── accordion strips (collapsed panels) ────────────────────────────────────── */
+.fl-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font-family: var(--font-grotesque);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.fl-strip:hover { border-color: rgba(138, 155, 179, 0.4); background: rgba(255, 255, 255, 0.018); }
+.fl-strip:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.fl-strip__title {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  font-weight: 600;
+  flex: 0 0 auto;
+}
+.fl-strip__dot {
+  width: 5px; height: 5px; border-radius: 50%; background: var(--signal);
+  box-shadow: 0 0 6px rgba(245, 181, 68, 0.7); flex: 0 0 auto;
+  animation: fl-pulse 1.4s ease-in-out infinite;
+}
+.fl-strip__summary {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--ink-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.fl-strip__summary b { color: var(--ink); font-weight: 500; }
+.fl-strip__summary .risk { color: var(--risk); }
+.fl-strip__chev { margin-left: auto; color: var(--ink-dim); font-size: 12px; flex: 0 0 auto; }
+
+/* ── follow control ─────────────────────────────────────────────────────────── */
+.fl-follow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--ink-dim);
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.fl-follow:hover { border-color: var(--ink-dim); }
+.fl-follow:focus-visible { outline: 2px solid var(--signal); outline-offset: 2px; }
+.fl-follow--on { color: var(--signal); border-color: rgba(245, 181, 68, 0.4); }
 
 .fl-mono { font-family: var(--font-mono); }
 .fl-dim { color: var(--ink-dim); }
@@ -62,6 +175,25 @@
 @keyframes fl-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.35; transform: scale(0.75); }
+}
+
+/* ── enter / flash on freshly-landed items (decision entries, tool chips) ────── */
+.fl-enter { animation: fl-enter 0.42s ease, fl-flash 0.95s ease; }
+@keyframes fl-enter {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes fl-flash {
+  0% { box-shadow: inset 0 0 0 200px rgba(245, 181, 68, 0.13); }
+  100% { box-shadow: inset 0 0 0 200px rgba(245, 181, 68, 0); }
+}
+
+/* ── status-pill transition pulse (esp. at_risk → secured) ──────────────────── */
+.fl-pill--pulse { animation: fl-pill-pulse 0.9s ease; }
+@keyframes fl-pill-pulse {
+  0% { transform: scale(1); filter: drop-shadow(0 0 0 currentColor); }
+  35% { transform: scale(1.16); filter: drop-shadow(0 0 7px currentColor); }
+  100% { transform: scale(1); filter: drop-shadow(0 0 0 currentColor); }
 }
 
 .fl-pill {
@@ -99,6 +231,14 @@
 }
 .fl-chip:hover { background: rgba(45, 212, 191, 0.12); border-color: rgba(45, 212, 191, 0.5); }
 .fl-chip__dot { width: 4px; height: 4px; border-radius: 50%; background: var(--graph-edge); }
+/* map-linked evidence chip: a faint crosshair signals "click to show on map" */
+.fl-chip--focus { cursor: pointer; }
+.fl-chip--focus::after { content: "⌖"; margin-left: 1px; font-size: 10px; opacity: 0.55; }
+.fl-chip--focus:hover::after { opacity: 1; }
+
+/* row locate glyph — appears on hover so the fly-to-map action is discoverable */
+.fl-exp__locate { color: var(--graph-edge); opacity: 0; margin-left: 7px; font-size: 12px; transition: opacity 0.15s ease; }
+.fl-exp__row:hover .fl-exp__locate { opacity: 0.75; }
 
 /* ── mission control: plan ───────────────────────────────────────────────────── */
 .fl-plan { display: flex; flex-direction: column; gap: 2px; }
@@ -232,27 +372,43 @@
 .fl-exp--secured { border-left: 2px solid var(--secured); }
 .fl-exp__row {
   display: grid;
-  grid-template-columns: 18px 1fr auto auto auto 14px;
+  grid-template-columns: 22px 1fr auto auto auto 30px;
   align-items: center;
-  gap: 10px;
-  padding: 9px 11px;
+  gap: 12px;
+  padding: 13px 12px;
+  min-height: 58px;
   cursor: pointer;
   background: transparent;
   border: none;
   width: 100%;
   text-align: left;
   color: inherit;
+  transition: background 0.15s ease;
 }
-.fl-exp__row:hover { background: rgba(255, 255, 255, 0.02); }
+.fl-exp__row:hover { background: rgba(255, 255, 255, 0.028); }
+.fl-exp__row:focus-visible { outline: 2px solid var(--signal); outline-offset: -2px; border-radius: 4px; }
 .fl-exp__rank { font-family: var(--font-mono); font-size: 11px; color: var(--ink-dim); }
-.fl-exp__name { font-size: 13.5px; color: var(--ink); font-weight: 500; }
+.fl-exp__name { font-size: 14px; color: var(--ink); font-weight: 500; }
 .fl-exp__sub { font-size: 10.5px; color: var(--ink-dim); }
 .fl-exp__metric { text-align: right; }
 .fl-exp__metric .v { font-family: var(--font-mono); font-size: 13px; color: var(--ink); display: block; font-variant-numeric: tabular-nums; }
 .fl-exp__metric .k { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-dim); }
 .fl-exp__metric .v--risk { color: var(--risk); }
-.fl-exp__caret { font-family: var(--font-mono); color: var(--ink-dim); font-size: 11px; transition: transform 0.2s ease; }
-.fl-exp__caret--open { transform: rotate(90deg); }
+/* the expand affordance: an always-visible bordered chevron that brightens on hover */
+.fl-exp__caret {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid var(--hairline);
+  color: var(--ink-dim);
+  font-size: 12px;
+  transition: transform 0.2s ease, border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+.fl-exp__row:hover .fl-exp__caret { border-color: var(--ink-dim); color: var(--ink); background: rgba(255, 255, 255, 0.03); }
+.fl-exp__caret--open { transform: rotate(90deg); border-color: rgba(245, 181, 68, 0.5); color: var(--signal); }
 .fl-exp__detail { padding: 11px; border-top: 1px solid var(--hairline); display: flex; flex-direction: column; gap: 11px; background: rgba(0, 0, 0, 0.18); }
 .fl-exp__rationale { font-size: 12px; line-height: 1.5; color: var(--ink-dim); }
 

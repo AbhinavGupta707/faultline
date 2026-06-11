@@ -4,7 +4,7 @@
  *  Results carry the distinct amber SIMULATED frame treatment.
  *  Session C2 owns this folder. */
 import { useState } from "react";
-import { Panel } from "../_shared/ui";
+import { AccordionPanel } from "../_shared/accordion";
 import { runWhatif, useFaultline, type WhatifScenario } from "../_shared/store";
 import { humanize, pct } from "../_shared/format";
 
@@ -82,8 +82,14 @@ export default function WhatIf() {
     }
   }
 
+  const strip = submitted ? (
+    <><b>Simulating</b> · {submitted.title ?? humanize(submitted.event_type)}</>
+  ) : (
+    <>stress-test a disruption · 4 presets</>
+  );
+
   return (
-    <Panel title="What-If" meta="stress test">
+    <AccordionPanel id="whatif" title="What-If" meta="stress test" strip={strip}>
       <div className="fl-presets">
         {PRESETS.map((p) => (
           <button
@@ -191,7 +197,7 @@ export default function WhatIf() {
           )}
         </div>
       </div>
-    </Panel>
+    </AccordionPanel>
   );
 }
 
