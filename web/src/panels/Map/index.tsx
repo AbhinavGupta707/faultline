@@ -17,6 +17,7 @@ import { API_BASE } from "../../lib/api";
 import { ambientField, fetchRecentEvents, fixtureEvents, tickerItems, type IntelEvent, type TickerItem } from "../../lib/intel";
 import Callouts from "./Callouts";
 import RippleLabels from "./RippleLabels";
+import NarrationLine from "./NarrationLine";
 import Ticker, { TICKER_HEIGHT } from "./Ticker";
 
 /** replay/demo mode keeps the intel feed deterministic; live mode polls the endpoint. */
@@ -422,6 +423,9 @@ export default function MapPanel() {
         <PhaseStepper steps={state.steps} activeStep={state.activeStep} />
         <div className="mono dim" style={{ fontSize: 10.5 }}>{PHASE_LABEL[state.phase] ?? state.phase}</div>
       </div>
+
+      {/* bottom-left — live narration line, above the legend */}
+      <NarrationLine state={state} bottom={TICKER_HEIGHT + 12 + 76} />
 
       {/* bottom-left — legend */}
       <Legend />
