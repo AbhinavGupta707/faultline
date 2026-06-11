@@ -18,7 +18,7 @@ const INITIAL_VIEW = {
   zoom: 1.35,
   pitch: 0,
   bearing: 0,
-  minZoom: 0.8,
+  minZoom: 1.1, // keep one world filling the viewport — no horizontal wrap/duplication
   maxZoom: 8,
 };
 
@@ -125,7 +125,7 @@ export default function MapPanel() {
     >
       {size.w > 0 && (
         <DeckGL
-          views={new MapView({ repeat: true })}
+          views={new MapView({ repeat: false })}
           initialViewState={INITIAL_VIEW}
           controller={{ dragRotate: false, keyboard: true, scrollZoom: { speed: 0.06, smooth: true } }}
           layers={layers}
