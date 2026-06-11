@@ -40,6 +40,18 @@ function urlPace(): number {
   return 1;
 }
 
+/** ?gate=80 holds the approval card until N seconds into the replay (recording cue —
+ *  everything before plays at normal pace; the run rests on the assessed state until then). */
+function urlGateMs(): number {
+  try {
+    const g = parseFloat(new URLSearchParams(window.location.search).get("gate") ?? "");
+    if (Number.isFinite(g) && g > 0 && g <= 300) return g * 1000;
+  } catch {
+    /* no window — default */
+  }
+  return 0;
+}
+
 export function createReplayStream(opts: ReplayOptions = {}): EventStream {
   const handlers = new Set<StreamHandler>();
   const log: WsMessage[] = []; // delivered s2c history — replayed to late subscribers
@@ -59,10 +71,19 @@ export function createReplayStream(opts: ReplayOptions = {}): EventStream {
       resolveGate = resolve;
     });
 
+  const gateMs = urlGateMs();
+  const startedAt = typeof performance !== "undefined" ? performance.now() : 0;
+
   (async () => {
     let prev: number | null = null;
     for (const msg of messages) {
       if (stopped) return;
+      // hold the approval moment until the narration is ready for it
+      if (gateMs && msg.type === "approval.request") {
+        const wait = gateMs - (performance.now() - startedAt);
+        if (wait > 0) await sleep(wait);
+        if (stopped) return;
+      }
       const t = Date.parse(msg.ts);
       const delta = prev === null ? 0 : Math.min((t - prev) / speed, MAX_DELTA_MS);
 
