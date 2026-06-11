@@ -8,7 +8,6 @@ import MissionControl from "./panels/MissionControl";
 import ActionBoard from "./panels/ActionBoard";
 import DecisionLog from "./panels/DecisionLog";
 import WhatIf from "./panels/WhatIf";
-import VoicePanel from "./features/voice";
 import AnalyticsPanel from "./features/analytics";
 import { API_BASE } from "./lib/api";
 import { useEventStream } from "./lib/useStream";
@@ -23,18 +22,8 @@ function isReplay(): boolean {
 }
 
 export default function App() {
-  const { messages, send } = useEventStream();
+  const { messages } = useEventStream();
   const state = useMemo(() => reduceMapState(messages), [messages]);
-
-  const onIntent = (intent: { action: string; approval_id?: string }) => {
-    // C1 forwards voice intents onto the agent ws; approve/reject route into the gate.
-    send({
-      type: "voice.intent",
-      ts: new Date().toISOString(),
-      run_id: state.activeRunId,
-      payload: { intent },
-    });
-  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", padding: 12, gap: 12 }}>
@@ -82,16 +71,11 @@ export default function App() {
         {/* map column — relative so the voice affordance can anchor over its bottom-center */}
         <div style={{ position: "relative", minWidth: 0, minHeight: 0 }}>
           <MapPanel />
-          {/* voice affordance sits bottom-center, lifted clear of the intel ticker strip */}
-          <div
-            title="Voice console — push-to-talk commands and voice approval (Gemini Live)"
-            style={{ position: "absolute", bottom: 44, left: "50%", transform: "translateX(-50%)", zIndex: 6, display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}
-          >
-            <VoicePanel wsUrl={import.meta.env.VITE_VOICE_WS_URL ?? ""} onIntent={onIntent} disabled />
-            <span className="mono dim" style={{ fontSize: 9, letterSpacing: "0.14em", textTransform: "uppercase", opacity: 0.75 }}>
-              voice · push-to-talk
-            </span>
-          </div>
+          {/* Voice push-to-talk (Session E's VoicePanel) is intentionally NOT mounted on the
+              demo surface: it shipped `disabled` (a dead control reads as a bug to judges —
+              "no dead buttons on camera"). The voice story is carried by the negotiation-call
+              transcript + its audio playback; re-enable here post-event when the in-app
+              gateway round-trip is verified. */}
         </div>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, minHeight: 0, overflow: "auto" }}>
           <MissionControl />

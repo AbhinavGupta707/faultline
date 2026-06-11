@@ -69,19 +69,20 @@ interface FlowDot {
   color: RGBA;
   size: number;
 }
-/** Energy pulses travelling along the routes: bright coral on hot exposure paths,
- *  slow faint teal on healthy ones — the "alive" texture the flat arcs get from pulsing. */
+/** Energy pulses travel ONLY along routes that matter right now — hot exposure paths
+ *  (coral) and the secured re-route via the recommended alternate (mint). The baseline
+ *  network stays still: motion is information, not decoration. */
 function flowData(
-  paths: Array<{ id: string; hot: boolean; path: [number, number, number][] }>,
+  paths: Array<{ id: string; hot: boolean; secured?: boolean; path: [number, number, number][] }>,
   time: number
 ): FlowDot[] {
   const out: FlowDot[] = [];
   for (const e of paths) {
-    const n = e.hot ? 3 : 1;
-    const period = e.hot ? 2.4 : 6.5 + (strHash(e.id) % 30) / 10;
+    if (!e.hot && !e.secured) continue;
+    const n = 3;
     const phase = (strHash(e.id) % 100) / 100;
     for (let k = 0; k < n; k++) {
-      const f = fract(time / period + k / n + phase);
+      const f = fract(time / 2.4 + k / n + phase);
       const idx = f * (e.path.length - 1);
       const i0 = Math.floor(idx);
       const t = idx - i0;
@@ -89,8 +90,8 @@ function flowData(
       const p1 = e.path[Math.min(i0 + 1, e.path.length - 1)];
       out.push({
         position: [p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t, p0[2] + (p1[2] - p0[2]) * t],
-        color: e.hot ? rgba(CORAL, 235) : rgba(TEAL, 130),
-        size: e.hot ? 3.6 : 2.1,
+        color: e.secured ? rgba(MINT, 230) : rgba(CORAL, 235),
+        size: 3.6,
       });
     }
   }
@@ -293,8 +294,9 @@ export function buildLayers(
     data: getWorldLand(),
     filled: true,
     stroked: true,
-    getFillColor: [27, 42, 61, 255],
-    getLineColor: [86, 116, 152, 70],
+    // muted earth tones: land reads as land against the deep-water ocean
+    getFillColor: [31, 44, 46, 255],
+    getLineColor: [98, 126, 108, 75],
     lineWidthMinPixels: 0.7,
     // Globe fill correctness: _full3d uses the 3D tesselator (concave countries fill on
     // the sphere), and cullMode:'none' stops back-face culling from dropping whole
@@ -336,9 +338,9 @@ export function buildLayers(
     greatCircle: true,
     getSourcePosition: (d: any) => d.from,
     getTargetPosition: (d: any) => d.to,
-    getSourceColor: (d: any) => (d.hot ? rgba(CORAL, 60) : rgba(TEAL, 26)),
-    getTargetColor: (d: any) => (d.hot ? rgba(CORAL, 40) : rgba(TEAL, 20)),
-    getWidth: (d: any) => (d.hot ? 9 : 6),
+    getSourceColor: (d: any) => (d.hot ? rgba(CORAL, 60) : rgba(TEAL, 13)),
+    getTargetColor: (d: any) => (d.hot ? rgba(CORAL, 40) : rgba(TEAL, 10)),
+    getWidth: (d: any) => (d.hot ? 9 : 4),
     getHeight: 0.5,
     widthUnits: "pixels",
     parameters: { depthTest },
@@ -350,9 +352,9 @@ export function buildLayers(
     greatCircle: true,
     getSourcePosition: (d: any) => d.from,
     getTargetPosition: (d: any) => d.to,
-    getSourceColor: (d: any) => (d.hot ? rgba(CORAL, hotAlpha) : rgba(TEAL, 150)),
-    getTargetColor: (d: any) => (d.hot ? rgba(CORAL, Math.max(120, hotAlpha - 40)) : rgba(TEAL, 90)),
-    getWidth: (d: any) => (d.hot ? 2.4 : 1.3),
+    getSourceColor: (d: any) => (d.hot ? rgba(CORAL, hotAlpha) : rgba(TEAL, 70)),
+    getTargetColor: (d: any) => (d.hot ? rgba(CORAL, Math.max(120, hotAlpha - 40)) : rgba(TEAL, 45)),
+    getWidth: (d: any) => (d.hot ? 3.0 : 0.9),
     getHeight: 0.5,
     widthUnits: "pixels",
     updateTriggers: { getSourceColor: [hotAlpha], getTargetColor: [hotAlpha] },
@@ -473,32 +475,48 @@ export function buildLayers(
       parameters: { depthTest: true },
     });
     // ArcLayer is a no-show under GlobeView → lifted great-circle PathLayers instead.
-    const pathData = edgeData.map((e) => ({ ...e, path: gcPath(e.id, e.from, e.to) }));
+    // Visual hierarchy: the baseline network is faint context; threatened paths ignite
+    // coral and pulse; once re-sourced, a NEW mint route appears from the recommended
+    // alternate to each secured product. Show things only when they mean something.
+    const pathData = edgeData.map((e) => ({ ...e, secured: false, path: gcPath(e.id, e.from, e.to) }));
+    const securedPaths: typeof pathData = [];
+    if (state.recommended) {
+      const from = pos(state.recommended);
+      if (from)
+        for (const pid of state.secured) {
+          const to = pos(pid);
+          if (to) {
+            const id = `secured-${state.recommended}-${pid}`;
+            securedPaths.push({ id, hot: false, secured: true, from, to, path: gcPath(id, from, to) } as (typeof pathData)[number]);
+          }
+        }
+    }
+    const allPaths = pathData.concat(securedPaths);
     const routeBloom = new PathLayer({
       id: "route-bloom",
-      data: pathData,
+      data: allPaths,
       getPath: (d: any) => d.path,
-      getColor: (d: any) => (d.hot ? rgba(CORAL, 55) : rgba(TEAL, 32)),
-      getWidth: (d: any) => (d.hot ? 8.5 : 5.5),
+      getColor: (d: any) => (d.hot ? rgba(CORAL, 55) : d.secured ? rgba(MINT, 50) : rgba(TEAL, 14)),
+      getWidth: (d: any) => (d.hot || d.secured ? 8.5 : 3.5),
       widthUnits: "pixels",
       jointRounded: true,
-      updateTriggers: { getColor: [state] },
+      updateTriggers: { getColor: [state], getWidth: [state] },
       parameters: { depthTest },
     });
     const routeCore = new PathLayer({
       id: "route-core",
-      data: pathData,
+      data: allPaths,
       getPath: (d: any) => d.path,
-      getColor: (d: any) => (d.hot ? rgba(CORAL, hotAlpha) : rgba(TEAL, 155)),
-      getWidth: (d: any) => (d.hot ? 2.4 : 1.3),
+      getColor: (d: any) => (d.hot ? rgba(CORAL, hotAlpha) : d.secured ? rgba(MINT, 220) : rgba(TEAL, 70)),
+      getWidth: (d: any) => (d.hot ? 3.0 : d.secured ? 2.4 : 0.9),
       widthUnits: "pixels",
       jointRounded: true,
-      updateTriggers: { getColor: [hotAlpha, state] },
+      updateTriggers: { getColor: [hotAlpha, state], getWidth: [state] },
       parameters: { depthTest },
     });
     const flow = new ScatterplotLayer({
       id: "route-flow",
-      data: reduced ? [] : flowData(pathData, time),
+      data: reduced ? [] : flowData(allPaths, time),
       getPosition: (d: FlowDot) => d.position,
       getRadius: (d: FlowDot) => d.size,
       radiusUnits: "pixels",

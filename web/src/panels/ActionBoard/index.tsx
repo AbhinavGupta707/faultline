@@ -253,6 +253,39 @@ function VerifyCard({ verify }: { verify: VerifyResult }) {
   );
 }
 
+/** Read the displayed transcript aloud (Web Speech, two distinct voices). Honest by
+ *  construction: the audio always matches the words on screen. Live calls themselves run
+ *  on Gemini native audio server-side — this is a synthesized replay of the transcript. */
+function useCallAudio(transcript: Array<{ speaker?: string; text?: string }>) {
+  const [playing, setPlaying] = useState(false);
+  const stop = () => {
+    try {
+      window.speechSynthesis?.cancel();
+    } catch { /* unsupported — button is hidden anyway */ }
+    setPlaying(false);
+  };
+  useEffect(() => stop, []); // cancel on unmount
+  const play = () => {
+    const synth = window.speechSynthesis;
+    if (!synth || !transcript.length) return;
+    synth.cancel();
+    const voices = synth.getVoices().filter((v) => v.lang.startsWith("en"));
+    const agentVoice = voices[0];
+    const supplierVoice = voices.find((v) => v !== agentVoice) ?? agentVoice;
+    transcript.forEach((line, i) => {
+      const u = new SpeechSynthesisUtterance(line.text ?? "");
+      const isSupplier = line.speaker === "supplier";
+      if (isSupplier ? supplierVoice : agentVoice) u.voice = isSupplier ? supplierVoice! : agentVoice!;
+      u.pitch = isSupplier ? 1.18 : 0.92;
+      u.rate = 1.04;
+      if (i === transcript.length - 1) u.onend = () => setPlaying(false);
+      synth.speak(u);
+    });
+    setPlaying(true);
+  };
+  return { playing, toggle: () => (playing ? stop() : play()) };
+}
+
 function LiveCall({ events }: { events: CallEvent[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const transcript = events.filter((e) => e.event === "transcript");
@@ -260,6 +293,8 @@ function LiveCall({ events }: { events: CallEvent[] }) {
   const summary = [...events].reverse().find((e) => e.event === "summary")?.summary;
   const lastStatus = statuses[statuses.length - 1]?.status;
   const active = lastStatus === "connected" || lastStatus === "initiating" || lastStatus === "ringing";
+  const audio = useCallAudio(transcript);
+  const speechOk = typeof window !== "undefined" && "speechSynthesis" in window;
 
   useEffect(() => {
     if (ref.current) ref.current.scrollTop = ref.current.scrollHeight;
@@ -278,6 +313,32 @@ function LiveCall({ events }: { events: CallEvent[] }) {
           </div>
         )}
         {active && <span className="fl-call__status fl-call__live" style={{ marginLeft: "auto" }}>AI agent on call</span>}
+        {speechOk && transcript.length > 0 && (
+          <button
+            type="button"
+            onClick={audio.toggle}
+            title={
+              audio.playing
+                ? "Stop playback"
+                : "Hear the call — synthesized from this transcript (live calls run on Gemini native audio)"
+            }
+            aria-label={audio.playing ? "Stop call audio" : "Play call audio"}
+            className="mono"
+            style={{
+              marginLeft: active ? 8 : "auto",
+              flexShrink: 0,
+              background: audio.playing ? "rgba(245,181,68,0.16)" : "transparent",
+              border: "1px solid " + (audio.playing ? "var(--signal, #F5B544)" : "rgba(138,155,179,0.4)"),
+              color: audio.playing ? "var(--signal, #F5B544)" : "var(--ink-dim, #8A9BB3)",
+              borderRadius: 6,
+              fontSize: 11,
+              padding: "3px 9px",
+              cursor: "pointer",
+            }}
+          >
+            {audio.playing ? "■ stop" : "🔊 hear it"}
+          </button>
+        )}
       </div>
 
       {transcript.length ? (
