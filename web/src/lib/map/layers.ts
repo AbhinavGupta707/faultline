@@ -10,6 +10,7 @@ import type { Layer } from "@deck.gl/core";
 import { EDGES, NODES, nodeById, pos, edgeKey } from "./network";
 import { getWorldLand } from "./worldGeo";
 import type { MapState } from "../mapModel";
+import type { AmbientBlip } from "../intel";
 
 export type MapViewKind = "globe" | "flat";
 const EARTH_RADIUS = 6_371_000;
@@ -188,7 +189,8 @@ export function buildLayers(
   time: number,
   reduced: boolean,
   view: MapViewKind = "flat",
-  hoveredId: string | null = null
+  hoveredId: string | null = null,
+  ambient: AmbientBlip[] = []
 ): Layer[] {
   // On the globe we depth-test so the far hemisphere is occluded by the ocean sphere;
   // on the flat map we disable it so the bloom/ripple passes composite freely.
@@ -214,6 +216,31 @@ export function buildLayers(
     getFillColor: [27, 42, 61, 255],
     getLineColor: [86, 116, 152, 70],
     lineWidthMinPixels: 0.7,
+    parameters: { depthTest },
+  });
+
+  // ambient "recent events" field — faint grey breathing blips; Watcher-relevant ones
+  // ignite coral (simulated/what-if events read amber). Pure background texture.
+  const relevantIds = new Set(state.ripples.map((r) => r.eventId));
+  const ambientLayer = new ScatterplotLayer({
+    id: "ambient-events",
+    data: ambient,
+    getPosition: (d: AmbientBlip) => [d.lon, d.lat],
+    getRadius: (d: AmbientBlip) => {
+      const hot = relevantIds.has(d.id);
+      const phase = (d.lon + d.lat) % 3; // stable per-blip phase
+      const breathe = reduced ? 1 : 0.7 + 0.5 * pulse(time + phase, hot ? 1.5 : 3.2);
+      return (hot ? 4.2 : 2.4) * breathe;
+    },
+    radiusUnits: "pixels",
+    radiusMinPixels: 1.5,
+    stroked: false,
+    getFillColor: (d: AmbientBlip): RGBA => {
+      if (relevantIds.has(d.id)) return rgba(CORAL, 230);
+      if (d.simulated) return rgba(AMBER, 200);
+      return [138, 155, 179, d.hasHeadline ? 150 : 95];
+    },
+    updateTriggers: { getRadius: [time, state], getFillColor: [state] },
     parameters: { depthTest },
   });
 
@@ -356,8 +383,8 @@ export function buildLayers(
       getColor: [8, 16, 28],
       parameters: { depthTest: true },
     });
-    return [ocean, land, arcBloom, arcs, rippleLayer, halos, leaderLines, nodes, text];
+    return [ocean, land, ambientLayer, arcBloom, arcs, rippleLayer, halos, leaderLines, nodes, text];
   }
 
-  return [land, arcBloom, arcs, rippleLayer, halos, leaderLines, nodes, text];
+  return [land, ambientLayer, arcBloom, arcs, rippleLayer, halos, leaderLines, nodes, text];
 }

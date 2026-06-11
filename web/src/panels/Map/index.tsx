@@ -13,7 +13,25 @@ import { reduceMapState } from "../../lib/mapModel";
 import type { Focus } from "../../lib/mapModel";
 import { buildLayers, type MapViewKind } from "../../lib/map/layers";
 import type { NetNode } from "../../lib/map/network";
+import { API_BASE } from "../../lib/api";
+import { ambientField, fetchRecentEvents, fixtureEvents, tickerItems, type IntelEvent, type TickerItem } from "../../lib/intel";
 import Callouts from "./Callouts";
+import Ticker, { TICKER_HEIGHT } from "./Ticker";
+
+/** replay/demo mode keeps the intel feed deterministic; live mode polls the endpoint. */
+function isReplayMode(): boolean {
+  if (typeof window === "undefined") return true;
+  const q = new URLSearchParams(window.location.search).get("demo");
+  const mode = q ?? (import.meta.env.VITE_DEMO_MODE as string | undefined) ?? "replay";
+  return mode !== "live";
+}
+
+interface PinnedFocus {
+  lon: number;
+  lat: number;
+  label: string;
+  url: string;
+}
 
 interface ViewState {
   longitude: number;
@@ -180,7 +198,20 @@ function useMapEngine(view: MapViewKind, reduced: boolean, focus: Focus | null) 
     setViewState({ ...cfg.initial, ...vs });
   }, [cfg.initial]);
 
-  return { viewState, time, onViewStateChange };
+  // imperative camera command (ticker clicks, faultline:focus from C2 evidence chips)
+  const flyTo = useCallback(
+    (lon: number, lat: number) => {
+      target.current = { longitude: lon, latitude: lat, zoom: cfg.focusZoom };
+      dwellUntil.current = (typeof performance !== "undefined" ? performance.now() : 0) + 12_000;
+      if (reduced) {
+        cur.current = { ...cur.current, longitude: lon, latitude: lat, zoom: cfg.focusZoom };
+        setViewState({ ...cur.current });
+      }
+    },
+    [cfg.focusZoom, reduced]
+  );
+
+  return { viewState, time, onViewStateChange, flyTo };
 }
 
 const PHASE_LABEL: Record<string, string> = {
@@ -204,9 +235,51 @@ export default function MapPanel() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   const state = useMemo(() => reduceMapState(messages), [messages]);
-  const { viewState, time, onViewStateChange } = useMapEngine(view, reduced, state.focus);
-  const layers = useMemo(() => buildLayers(state, time, reduced, view, hoveredId), [state, time, reduced, view, hoveredId]);
+  const { viewState, time, onViewStateChange, flyTo } = useMapEngine(view, reduced, state.focus);
+
+  // live intelligence feed — deterministic fixture in replay, polled in live mode
+  const [events, setEvents] = useState<IntelEvent[]>(() => fixtureEvents());
+  useEffect(() => {
+    if (isReplayMode()) return;
+    let alive = true;
+    const poll = () => fetchRecentEvents(API_BASE).then((ev) => alive && setEvents(ev));
+    poll();
+    const t = setInterval(poll, 30_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, []);
+  const ambient = useMemo(() => ambientField(events), [events]);
+  const ticker = useMemo(() => tickerItems(events), [events]);
+
+  const layers = useMemo(
+    () => buildLayers(state, time, reduced, view, hoveredId, ambient),
+    [state, time, reduced, view, hoveredId, ambient]
+  );
   const deckView = useMemo(() => (view === "globe" ? new GlobeView({ resolution: 12 }) : new MapView({ repeat: false })), [view]);
+
+  // click-to-fly: ticker items and C2 evidence chips both dispatch `faultline:focus`
+  const [pinned, setPinned] = useState<PinnedFocus | null>(null);
+  useEffect(() => {
+    const onFocus = (e: Event) => {
+      const d = (e as CustomEvent).detail ?? {};
+      if (typeof d.lon === "number" && typeof d.lat === "number") {
+        flyTo(d.lon, d.lat);
+        setPinned({ lon: d.lon, lat: d.lat, label: d.label ?? "", url: d.url ?? "" });
+      }
+    };
+    window.addEventListener("faultline:focus", onFocus as EventListener);
+    return () => window.removeEventListener("faultline:focus", onFocus as EventListener);
+  }, [flyTo]);
+  useEffect(() => {
+    if (!pinned) return;
+    const t = setTimeout(() => setPinned(null), 10_000);
+    return () => clearTimeout(t);
+  }, [pinned]);
+
+  const pickTicker = (it: TickerItem) =>
+    window.dispatchEvent(new CustomEvent("faultline:focus", { detail: { lon: it.lon, lat: it.lat, label: it.label, url: it.url } }));
 
   const getTooltip = ({ object, layer }: { object?: NetNode; layer?: { id: string } }) => {
     if (!object || layer?.id !== "nodes") return null;
@@ -275,6 +348,52 @@ export default function MapPanel() {
 
       {size.w > 0 && (
         <Callouts state={state} view={deckView} viewState={viewState as unknown as Record<string, number>} size={size} kind={view} />
+      )}
+
+      {/* live intelligence ticker (bottom strip) */}
+      <Ticker items={ticker} onPick={pickTicker} />
+
+      {/* click-to-fly callout (ticker item / C2 evidence chip) */}
+      {pinned && (
+        <div
+          className="fade-up"
+          style={{ position: "absolute", top: 56, left: "50%", transform: "translateX(-50%)", maxWidth: "62%", zIndex: 7 }}
+        >
+          <div
+            className="panel"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "9px 13px",
+              borderColor: "rgba(45,212,191,0.45)",
+              boxShadow: "0 6px 22px rgba(0,0,0,0.5)",
+              background: "rgba(6,13,23,0.95)",
+            }}
+          >
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--graph-edge)", boxShadow: "var(--glow-teal)", flexShrink: 0 }} />
+            <span style={{ fontSize: 12, color: "var(--ink)", lineHeight: 1.3 }}>{pinned.label || "Located on map"}</span>
+            {pinned.url && (
+              <a
+                href={pinned.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mono"
+                style={{ fontSize: 10.5, color: "var(--graph-edge)", whiteSpace: "nowrap", textDecoration: "none", flexShrink: 0 }}
+              >
+                source ↗
+              </a>
+            )}
+            <button
+              onClick={() => setPinned(null)}
+              aria-label="Dismiss"
+              className="mono"
+              style={{ background: "none", border: "none", color: "var(--ink-dim)", cursor: "pointer", fontSize: 13, lineHeight: 1, flexShrink: 0 }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
       )}
 
       {/* top-left — identity + run */}
@@ -373,7 +492,7 @@ function Legend() {
     ["var(--secured)", "Secured"],
   ];
   return (
-    <div style={{ position: "absolute", bottom: 14, left: 16, display: "flex", flexDirection: "column", gap: 5, pointerEvents: "none" }}>
+    <div style={{ position: "absolute", bottom: TICKER_HEIGHT + 12, left: 16, display: "flex", flexDirection: "column", gap: 5, pointerEvents: "none" }}>
       {items.map(([c, label]) => (
         <div key={label} style={{ display: "flex", alignItems: "center", gap: 7 }}>
           <span style={{ width: 8, height: 8, borderRadius: 50, background: c, boxShadow: `0 0 7px ${c}` }} />

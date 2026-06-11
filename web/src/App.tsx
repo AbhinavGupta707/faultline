@@ -60,7 +60,8 @@ export default function App() {
         {/* map column — relative so the voice affordance can anchor over its bottom-center */}
         <div style={{ position: "relative", minWidth: 0, minHeight: 0 }}>
           <MapPanel />
-          <div style={{ position: "absolute", bottom: 14, left: "50%", transform: "translateX(-50%)", zIndex: 6 }}>
+          {/* voice affordance sits bottom-center, lifted clear of the intel ticker strip */}
+          <div style={{ position: "absolute", bottom: 44, left: "50%", transform: "translateX(-50%)", zIndex: 6 }}>
             <VoicePanel wsUrl={import.meta.env.VITE_VOICE_WS_URL ?? ""} onIntent={onIntent} disabled />
           </div>
         </div>
