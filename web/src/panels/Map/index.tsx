@@ -5,14 +5,25 @@
  *  WS stream (mapModel/layers) — the backend never sends pixels. Reduced-motion + keyboard
  *  + responsive. Basemap is pure deck.gl GeoJSON for exact palette fidelity (worldGeo.ts);
  *  the @deck.gl/google-maps interleaved path is a documented one-component swap. */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import DeckGL from "@deck.gl/react";
-import { MapView } from "@deck.gl/core";
+import { MapView, _GlobeView as GlobeView } from "@deck.gl/core";
 import { useEventStream } from "../../lib/useStream";
 import { reduceMapState } from "../../lib/mapModel";
-import { buildLayers } from "../../lib/map/layers";
+import type { Focus } from "../../lib/mapModel";
+import { buildLayers, type MapViewKind } from "../../lib/map/layers";
 
-const INITIAL_VIEW = {
+interface ViewState {
+  longitude: number;
+  latitude: number;
+  zoom: number;
+  pitch: number;
+  bearing: number;
+  minZoom: number;
+  maxZoom: number;
+}
+
+const FLAT_VIEW: ViewState = {
   longitude: 28,
   latitude: 26,
   zoom: 1.35,
@@ -21,6 +32,32 @@ const INITIAL_VIEW = {
   minZoom: 1.1, // keep one world filling the viewport — no horizontal wrap/duplication
   maxZoom: 8,
 };
+
+const GLOBE_VIEW: ViewState = {
+  longitude: 24,
+  latitude: 16,
+  zoom: 0.05,
+  pitch: 0,
+  bearing: 0,
+  minZoom: -1,
+  maxZoom: 5,
+};
+
+const VIEW_CFG = {
+  flat: { initial: FLAT_VIEW, idleZoom: FLAT_VIEW.zoom, focusZoom: 2.3, rotate: false },
+  globe: { initial: GLOBE_VIEW, idleZoom: GLOBE_VIEW.zoom, focusZoom: 1.5, rotate: true },
+} as const;
+
+const ROTATE_DEG_PER_SEC = 3.2;
+
+/** ?view=globe|flat — globe is the default; flat is the instant fallback. */
+function resolveView(): MapViewKind {
+  if (typeof window === "undefined") return "globe";
+  const q = new URLSearchParams(window.location.search).get("view");
+  if (q === "flat" || q === "globe") return q;
+  const env = (import.meta.env.VITE_MAP_VIEW as string | undefined)?.toLowerCase();
+  return env === "flat" ? "flat" : "globe";
+}
 
 function usePrefersReducedMotion(): boolean {
   const [reduced, setReduced] = useState(
@@ -56,28 +93,92 @@ function useMeasure<T extends HTMLElement>() {
   return [ref, size] as const;
 }
 
-/** rAF clock (seconds). Frozen when reduced-motion is requested. */
-function useClock(active: boolean): number {
-  const [t, setT] = useState(0);
-  const ref = useRef(0);
+/** Combined rAF engine: drives the animation clock AND the camera.
+ *  - globe idle: slow auto-rotation; flat idle: still.
+ *  - a new agent focus flies the camera there and dwells; user interaction pauses both.
+ *  - reduced-motion: no loop; the camera jumps to focus, visuals are static. */
+function useMapEngine(view: MapViewKind, reduced: boolean, focus: Focus | null) {
+  const cfg = VIEW_CFG[view];
+  const [viewState, setViewState] = useState<ViewState>(cfg.initial);
+  const [time, setTime] = useState(0);
+
+  const cur = useRef<ViewState>({ ...cfg.initial });
+  const target = useRef({ longitude: cfg.initial.longitude, latitude: cfg.initial.latitude, zoom: cfg.initial.zoom });
+  const dwellUntil = useRef(0);
+  const interacting = useRef(false);
+  const lastEmit = useRef(0);
+  const clock = useRef(0);
+
+  // reset camera when the view kind changes
   useEffect(() => {
-    if (!active) return;
+    cur.current = { ...cfg.initial };
+    target.current = { longitude: cfg.initial.longitude, latitude: cfg.initial.latitude, zoom: cfg.initial.zoom };
+    setViewState({ ...cfg.initial });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
+
+  // fly to a new agent focus (and dwell there before resuming idle rotation)
+  useEffect(() => {
+    if (!focus) return;
+    target.current = { longitude: focus.lon, latitude: focus.lat, zoom: cfg.focusZoom };
+    dwellUntil.current = (typeof performance !== "undefined" ? performance.now() : 0) + 11_000;
+    if (reduced) {
+      cur.current = { ...cur.current, longitude: focus.lon, latitude: focus.lat, zoom: cfg.focusZoom };
+      setViewState({ ...cur.current });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.lon, focus?.lat, reduced, view]);
+
+  useEffect(() => {
+    if (reduced) return;
     let raf = 0;
     let start: number | null = null;
+    let last = 0;
     const loop = (ts: number) => {
-      if (start === null) start = ts;
-      const next = (ts - start) / 1000;
-      // throttle React updates to ~30fps; deck.gl interpolates smoothly enough
-      if (next - ref.current >= 0.033) {
-        ref.current = next;
-        setT(next);
+      if (start === null) {
+        start = ts;
+        last = ts;
+      }
+      const dt = Math.min((ts - last) / 1000, 0.05);
+      last = ts;
+      const tnow = (ts - start) / 1000;
+
+      const idle = ts > dwellUntil.current && !interacting.current;
+      if (cfg.rotate && idle) {
+        target.current.longitude += ROTATE_DEG_PER_SEC * dt;
+        target.current.latitude += (cfg.initial.latitude - target.current.latitude) * 0.02;
+        target.current.zoom += (cfg.idleZoom - target.current.zoom) * 0.02;
+      }
+      // frame-rate-independent easing toward the target
+      const e = 1 - Math.pow(1 - 0.09, dt * 60);
+      cur.current.longitude += (target.current.longitude - cur.current.longitude) * e;
+      cur.current.latitude += (target.current.latitude - cur.current.latitude) * e;
+      cur.current.zoom += (target.current.zoom - cur.current.zoom) * e;
+
+      if (tnow - lastEmit.current >= 0.033) {
+        lastEmit.current = tnow;
+        clock.current = tnow;
+        setTime(tnow);
+        setViewState({ ...cfg.initial, ...cur.current });
       }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [active]);
-  return t;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, reduced]);
+
+  const onViewStateChange = useCallback((params: { viewState: ViewState; interactionState?: Record<string, boolean> }) => {
+    const vs = params.viewState;
+    cur.current = { ...cur.current, ...vs };
+    target.current = { longitude: vs.longitude, latitude: vs.latitude, zoom: vs.zoom };
+    const is = params.interactionState ?? {};
+    interacting.current = !!(is.isDragging || is.isZooming || is.isPanning || is.isRotating);
+    if (interacting.current) dwellUntil.current = (typeof performance !== "undefined" ? performance.now() : 0) + 9_000;
+    setViewState({ ...cfg.initial, ...vs });
+  }, [cfg.initial]);
+
+  return { viewState, time, onViewStateChange };
 }
 
 const PHASE_LABEL: Record<string, string> = {
@@ -94,12 +195,14 @@ const PHASE_LABEL: Record<string, string> = {
 export default function MapPanel() {
   const { messages, send } = useEventStream();
   const reduced = usePrefersReducedMotion();
-  const time = useClock(!reduced);
+  const [view] = useState<MapViewKind>(resolveView);
 
   const [boxRef, size] = useMeasure<HTMLElement>();
 
   const state = useMemo(() => reduceMapState(messages), [messages]);
-  const layers = useMemo(() => buildLayers(state, time, reduced), [state, time, reduced]);
+  const { viewState, time, onViewStateChange } = useMapEngine(view, reduced, state.focus);
+  const layers = useMemo(() => buildLayers(state, time, reduced, view), [state, time, reduced, view]);
+  const deckView = useMemo(() => (view === "globe" ? new GlobeView({ resolution: 12 }) : new MapView({ repeat: false })), [view]);
 
   const approve = () => {
     if (!state.approvalPending) return;
@@ -125,8 +228,9 @@ export default function MapPanel() {
     >
       {size.w > 0 && (
         <DeckGL
-          views={new MapView({ repeat: false })}
-          initialViewState={INITIAL_VIEW}
+          views={deckView}
+          viewState={viewState}
+          onViewStateChange={onViewStateChange as never}
           controller={{ dragRotate: false, keyboard: true, scrollZoom: { speed: 0.06, smooth: true } }}
           layers={layers}
           width={size.w}

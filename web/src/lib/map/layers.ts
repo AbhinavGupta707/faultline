@@ -2,10 +2,20 @@
  *  Pure function: (MapState, time, reducedMotion) → deck.gl Layer[]. Every visual is
  *  derived from the semantic stream via mapModel; nothing here talks to the network. */
 import { ArcLayer, GeoJsonLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
+import { SimpleMeshLayer } from "@deck.gl/mesh-layers";
+import { COORDINATE_SYSTEM } from "@deck.gl/core";
+import { SphereGeometry } from "@luma.gl/engine";
 import type { Layer } from "@deck.gl/core";
 import { EDGES, NODES, nodeById, pos, edgeKey } from "./network";
 import { getWorldLand } from "./worldGeo";
 import type { MapState } from "../mapModel";
+
+export type MapViewKind = "globe" | "flat";
+const EARTH_RADIUS = 6_371_000;
+// one shared sphere mesh for the globe ocean (built lazily, reused across renders)
+let sphereMesh: SphereGeometry | null = null;
+const getSphere = () =>
+  (sphereMesh ??= new SphereGeometry({ radius: EARTH_RADIUS * 0.997, nlat: 36, nlong: 72 }));
 
 type RGBA = [number, number, number, number];
 const TEAL = [45, 212, 191] as const;
@@ -140,7 +150,11 @@ function labelsData(state: MapState): LabelDatum[] {
   return out;
 }
 
-export function buildLayers(state: MapState, time: number, reduced: boolean): Layer[] {
+export function buildLayers(state: MapState, time: number, reduced: boolean, view: MapViewKind = "flat"): Layer[] {
+  // On the globe we depth-test so the far hemisphere is occluded by the ocean sphere;
+  // on the flat map we disable it so the bloom/ripple passes composite freely.
+  const globe = view === "globe";
+  const depthTest = globe;
   const edgeData = EDGES.map((e) => {
     const from = pos(e.src);
     const to = pos(e.dst);
@@ -160,7 +174,7 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
     getFillColor: [27, 42, 61, 255],
     getLineColor: [86, 116, 152, 70],
     lineWidthMinPixels: 0.7,
-    parameters: { depthTest: false },
+    parameters: { depthTest },
   });
 
   // soft teal "bloom" pass under the arcs (wide + translucent)
@@ -175,7 +189,7 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
     getWidth: (d: any) => (d.hot ? 9 : 6),
     getHeight: 0.5,
     widthUnits: "pixels",
-    parameters: { depthTest: false },
+    parameters: { depthTest },
   });
 
   const arcs = new ArcLayer({
@@ -190,7 +204,7 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
     getHeight: 0.5,
     widthUnits: "pixels",
     updateTriggers: { getSourceColor: [hotAlpha], getTargetColor: [hotAlpha] },
-    parameters: { depthTest: false },
+    parameters: { depthTest },
   });
 
   const rippleLayer = new ScatterplotLayer({
@@ -205,7 +219,7 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
     getLineWidth: (d: RippleDatum) => d.width,
     lineWidthUnits: "pixels",
     updateTriggers: { getRadius: [time], getLineColor: [time] },
-    parameters: { depthTest: false },
+    parameters: { depthTest },
   });
 
   // node glow halos (filled, low alpha) under the crisp node dots
@@ -220,7 +234,7 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
       return [c[0], c[1], c[2], Math.round(c[3] * 0.16)];
     },
     updateTriggers: { getRadius: [time, state], getFillColor: [state] },
-    parameters: { depthTest: false },
+    parameters: { depthTest },
   });
 
   const nodes = new ScatterplotLayer({
@@ -236,7 +250,7 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
     lineWidthUnits: "pixels",
     getFillColor: (d: any) => nodeColor(state, d.id, d.kind),
     updateTriggers: { getRadius: [time, state], getFillColor: [state] },
-    parameters: { depthTest: false },
+    parameters: { depthTest },
   });
 
   const text = new TextLayer({
@@ -257,8 +271,23 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
     fontSettings: { sdf: true, buffer: 8 },
     background: false,
     updateTriggers: { getText: [state], getColor: [state] },
-    parameters: { depthTest: false },
+    parameters: { depthTest },
   });
+
+  if (globe) {
+    // opaque ocean sphere just under the land — writes depth so the back of the globe
+    // (its arcs, nodes, ripples) is correctly hidden.
+    const ocean = new SimpleMeshLayer({
+      id: "globe-ocean",
+      data: [{ position: [0, 0, 0] }],
+      mesh: getSphere(),
+      coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
+      getPosition: (d: { position: number[] }) => d.position as [number, number, number],
+      getColor: [8, 16, 28],
+      parameters: { depthTest: true },
+    });
+    return [ocean, land, arcBloom, arcs, rippleLayer, halos, nodes, text];
+  }
 
   return [land, arcBloom, arcs, rippleLayer, halos, nodes, text];
 }
