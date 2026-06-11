@@ -28,6 +28,7 @@ export interface Ripple {
   title: string;
   placeName: string;
   eventType: string;
+  source: string;
   simulated: boolean;
 }
 
@@ -112,6 +113,7 @@ function applyEmit(s: MapState, emit: AgentEmitPayload): void {
           title: e.title,
           placeName: e.place_name,
           eventType: e.event_type,
+          source: e.source ?? "",
           simulated: e.simulated ?? false,
         });
       }

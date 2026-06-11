@@ -16,6 +16,7 @@ import type { NetNode } from "../../lib/map/network";
 import { API_BASE } from "../../lib/api";
 import { ambientField, fetchRecentEvents, fixtureEvents, tickerItems, type IntelEvent, type TickerItem } from "../../lib/intel";
 import Callouts from "./Callouts";
+import RippleLabels from "./RippleLabels";
 import Ticker, { TICKER_HEIGHT } from "./Ticker";
 
 /** replay/demo mode keeps the intel feed deterministic; live mode polls the endpoint. */
@@ -259,8 +260,8 @@ export default function MapPanel() {
   const ticker = useMemo(() => tickerItems(events), [events]);
 
   const layers = useMemo(
-    () => buildLayers(state, time, reduced, view, hoveredId, ambient),
-    [state, time, reduced, view, hoveredId, ambient]
+    () => buildLayers(state, time, reduced, view, hoveredId, ambient, { lon: viewState.longitude, lat: viewState.latitude }),
+    [state, time, reduced, view, hoveredId, ambient, viewState.longitude, viewState.latitude]
   );
   const deckView = useMemo(() => (view === "globe" ? new GlobeView({ resolution: 12 }) : new MapView({ repeat: false })), [view]);
 
@@ -352,7 +353,10 @@ export default function MapPanel() {
       )}
 
       {size.w > 0 && (
-        <Callouts state={state} view={deckView} viewState={viewState as unknown as Record<string, number>} size={size} kind={view} />
+        <>
+          <RippleLabels state={state} view={deckView} viewState={viewState as unknown as Record<string, number>} size={size} kind={view} />
+          <Callouts state={state} view={deckView} viewState={viewState as unknown as Record<string, number>} size={size} kind={view} />
+        </>
       )}
 
       {/* live intelligence ticker (bottom strip) */}

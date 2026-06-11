@@ -14,6 +14,16 @@ import type { AmbientBlip } from "../intel";
 
 export type MapViewKind = "globe" | "flat";
 const EARTH_RADIUS = 6_371_000;
+
+const D2R = Math.PI / 180;
+/** great-circle angular distance in degrees — used to cull back-of-globe labels */
+function angDeg(lon1: number, lat1: number, lon2: number, lat2: number): number {
+  const dLat = (lat2 - lat1) * D2R;
+  const dLon = (lon2 - lon1) * D2R;
+  const a =
+    Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * D2R) * Math.cos(lat2 * D2R) * Math.sin(dLon / 2) ** 2;
+  return (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))) / D2R;
+}
 // one shared sphere mesh for the globe ocean (built lazily, reused across renders)
 let sphereMesh: SphereGeometry | null = null;
 const getSphere = () =>
@@ -172,18 +182,8 @@ function labelsData(state: MapState, hoveredId: string | null): LabelDatum[] {
     });
   }
 
-  // event place labels
-  for (const r of state.ripples) {
-    out.push({
-      position: [r.lon, r.lat],
-      text: r.placeName.split(",")[0],
-      color: rgba(r.simulated ? AMBER : CORAL, 235),
-      size: 11,
-      priority: 88,
-      anchor: "start",
-      pixelOffset: [12, 0],
-    });
-  }
+  // (disruption ripple labels are rendered as projected DOM pills — see RippleLabels —
+  //  because deck TextLayer doesn't render reliably under GlobeView.)
   return out;
 }
 
@@ -193,7 +193,8 @@ export function buildLayers(
   reduced: boolean,
   view: MapViewKind = "flat",
   hoveredId: string | null = null,
-  ambient: AmbientBlip[] = []
+  ambient: AmbientBlip[] = [],
+  center: { lon: number; lat: number } | null = null
 ): Layer[] {
   // On the globe we depth-test so the far hemisphere is occluded by the ocean sphere;
   // on the flat map we disable it so the bloom/ripple passes composite freely.
@@ -208,7 +209,10 @@ export function buildLayers(
 
   const hotAlpha = reduced ? 220 : Math.round(150 + 105 * pulse(time, 1.3));
   const ripples = ripplesData(state, time, reduced);
-  const labels = labelsData(state, hoveredId);
+  let labels = labelsData(state, hoveredId);
+  // On the globe, text can't depth-test (it would z-fight the coplanar land and vanish),
+  // so we render it always-on-top and cull back-hemisphere labels here by view center.
+  if (globe && center) labels = labels.filter((l) => angDeg(l.position[0], l.position[1], center.lon, center.lat) < 86);
   const leaders = labels.filter((l) => l.leaderFrom);
 
   const land = new GeoJsonLayer({
@@ -339,7 +343,7 @@ export function buildLayers(
     getColor: [138, 155, 179, 90],
     getWidth: 1,
     widthUnits: "pixels",
-    parameters: { depthTest },
+    parameters: { depthTest: false },
   });
 
   const text = new TextLayer({
@@ -364,9 +368,11 @@ export function buildLayers(
     backgroundPadding: [7, 3, 7, 3],
     getBorderColor: [86, 116, 152, 110],
     getBorderWidth: 1,
-    // declutter: keep higher-priority labels, drop colliding lower ones
-    extensions: [new CollisionFilterExtension()],
-    collisionEnabled: true,
+    // declutter: keep higher-priority labels, drop colliding lower ones. The collision
+    // pass is screen-space and misbehaves under the globe projection (it hides every
+    // label), so it's flat-only; on the globe, depth-testing already hides the back side.
+    extensions: globe ? [] : [new CollisionFilterExtension()],
+    collisionEnabled: !globe,
     collisionGroup: "labels",
     getCollisionPriority: (d: LabelDatum) => d.priority,
     collisionTestProps: { sizeScale: 1 },
@@ -376,7 +382,9 @@ export function buildLayers(
       getPosition: [state, hoveredId],
       getCollisionPriority: [state, hoveredId],
     },
-    parameters: { depthTest },
+    // always-on-top: globe text can't depth-test (coplanar with land); back-side labels
+    // are culled by view center above instead.
+    parameters: { depthTest: false },
   });
 
   if (globe) {
