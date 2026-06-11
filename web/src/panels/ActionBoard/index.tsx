@@ -111,7 +111,13 @@ function ExposureRow({
           <span className="k">at risk</span>
         </span>
         <StatusPill status={exp.status} />
-        <span className={`fl-exp__caret ${open ? "fl-exp__caret--open" : ""}`}>{expandable ? "›" : ""}</span>
+        {expandable ? (
+          <span className={`fl-exp__caret ${open ? "fl-exp__caret--open" : ""}`} aria-hidden>
+            ›
+          </span>
+        ) : (
+          <span />
+        )}
       </button>
 
       {open && (
