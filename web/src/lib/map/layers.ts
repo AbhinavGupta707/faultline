@@ -1,11 +1,23 @@
 /** Living-map layer builder (Session C1 owns — THE hero).
  *  Pure function: (MapState, time, reducedMotion) → deck.gl Layer[]. Every visual is
  *  derived from the semantic stream via mapModel; nothing here talks to the network. */
-import { ArcLayer, GeoJsonLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
+import { ArcLayer, GeoJsonLayer, LineLayer, ScatterplotLayer, TextLayer } from "@deck.gl/layers";
+import { SimpleMeshLayer } from "@deck.gl/mesh-layers";
+import { CollisionFilterExtension } from "@deck.gl/extensions";
+import { COORDINATE_SYSTEM } from "@deck.gl/core";
+import { SphereGeometry } from "@luma.gl/engine";
 import type { Layer } from "@deck.gl/core";
 import { EDGES, NODES, nodeById, pos, edgeKey } from "./network";
 import { getWorldLand } from "./worldGeo";
 import type { MapState } from "../mapModel";
+import type { AmbientBlip } from "../intel";
+
+export type MapViewKind = "globe" | "flat";
+const EARTH_RADIUS = 6_371_000;
+// one shared sphere mesh for the globe ocean (built lazily, reused across renders)
+let sphereMesh: SphereGeometry | null = null;
+const getSphere = () =>
+  (sphereMesh ??= new SphereGeometry({ radius: EARTH_RADIUS * 0.997, nlat: 36, nlong: 72 }));
 
 type RGBA = [number, number, number, number];
 const TEAL = [45, 212, 191] as const;
@@ -90,20 +102,33 @@ function nodeRadius(state: MapState, id: string, kind: string, time: number, red
 }
 
 export interface LabelDatum {
-  position: [number, number];
+  position: [number, number]; // where the text pill renders
   text: string;
   color: RGBA;
   size: number;
+  priority: number; // collision priority — products/events win over suppliers
+  anchor: "start" | "end" | "middle";
+  pixelOffset: [number, number];
+  leaderFrom?: [number, number]; // node position, for the leader line
 }
 
-function labelsData(state: MapState): LabelDatum[] {
+// product labels are fanned west into the Pacific and leader-lined back to the
+// clustered finished-product nodes near Portland — so they never overlap each other.
+const PRODUCT_ANCHOR: Record<string, [number, number]> = {
+  "prd-granola-bar": [-131, 49.5],
+  "prd-sparkling-botanical": [-131, 45.2],
+  "prd-coldbrew-12oz": [-131, 40.9],
+};
+
+function labelsData(state: MapState, hoveredId: string | null): LabelDatum[] {
   const out: LabelDatum[] = [];
-  // product labels (always) — name + cover/secured
+
+  // products — always shown, leader-lined, highest priority
   for (const n of NODES) {
     if (n.kind !== "product") continue;
     const ex = state.exposureByProduct[n.id];
     let sub = "";
-    let color: RGBA = rgba(INK_DIM, 230);
+    let color: RGBA = rgba(INK_DIM, 235);
     if (state.secured.has(n.id)) {
       sub = " · secured";
       color = rgba(MINT, 255);
@@ -111,23 +136,39 @@ function labelsData(state: MapState): LabelDatum[] {
       sub = ` · ${ex.daysOfCover}d cover`;
       color = ex.status === "at_risk" ? rgba(CORAL, 255) : rgba(AMBER, 255);
     }
-    out.push({ position: [n.lon, n.lat], text: `${n.short}${sub}`, color, size: 12 });
+    out.push({
+      position: PRODUCT_ANCHOR[n.id] ?? [n.lon, n.lat],
+      text: `${n.short}${sub}`,
+      color,
+      size: 12,
+      priority: 100,
+      anchor: "end",
+      pixelOffset: [-8, 0],
+      leaderFrom: [n.lon, n.lat],
+    });
   }
-  // chokepoint + recommended supplier labels
+
+  // suppliers — only the relevant ones (chokepoint, recommended) or the hovered node
   const important = new Set<string>();
   for (const e of EDGES) if (state.hotEdgeKeys.has(edgeKey(e.src, e.dst))) important.add(e.src);
   if (state.recommended) important.add(state.recommended);
+  if (hoveredId) important.add(hoveredId);
   for (const id of important) {
     const n = nodeById(id);
     if (!n || n.kind !== "supplier") continue;
     const recommended = state.recommended === id;
+    const hovered = hoveredId === id;
     out.push({
       position: [n.lon, n.lat],
       text: n.short,
-      color: recommended ? rgba(AMBER, 255) : rgba(CORAL, 235),
+      color: recommended ? rgba(AMBER, 255) : hovered ? rgba(INK_DIM, 255) : rgba(CORAL, 235),
       size: 11,
+      priority: hovered ? 95 : 70,
+      anchor: "start",
+      pixelOffset: [12, 0],
     });
   }
+
   // event place labels
   for (const r of state.ripples) {
     out.push({
@@ -135,12 +176,26 @@ function labelsData(state: MapState): LabelDatum[] {
       text: r.placeName.split(",")[0],
       color: rgba(r.simulated ? AMBER : CORAL, 235),
       size: 11,
+      priority: 88,
+      anchor: "start",
+      pixelOffset: [12, 0],
     });
   }
   return out;
 }
 
-export function buildLayers(state: MapState, time: number, reduced: boolean): Layer[] {
+export function buildLayers(
+  state: MapState,
+  time: number,
+  reduced: boolean,
+  view: MapViewKind = "flat",
+  hoveredId: string | null = null,
+  ambient: AmbientBlip[] = []
+): Layer[] {
+  // On the globe we depth-test so the far hemisphere is occluded by the ocean sphere;
+  // on the flat map we disable it so the bloom/ripple passes composite freely.
+  const globe = view === "globe";
+  const depthTest = globe;
   const edgeData = EDGES.map((e) => {
     const from = pos(e.src);
     const to = pos(e.dst);
@@ -150,7 +205,8 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
 
   const hotAlpha = reduced ? 220 : Math.round(150 + 105 * pulse(time, 1.3));
   const ripples = ripplesData(state, time, reduced);
-  const labels = labelsData(state);
+  const labels = labelsData(state, hoveredId);
+  const leaders = labels.filter((l) => l.leaderFrom);
 
   const land = new GeoJsonLayer({
     id: "world-land",
@@ -160,7 +216,32 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
     getFillColor: [27, 42, 61, 255],
     getLineColor: [86, 116, 152, 70],
     lineWidthMinPixels: 0.7,
-    parameters: { depthTest: false },
+    parameters: { depthTest },
+  });
+
+  // ambient "recent events" field — faint grey breathing blips; Watcher-relevant ones
+  // ignite coral (simulated/what-if events read amber). Pure background texture.
+  const relevantIds = new Set(state.ripples.map((r) => r.eventId));
+  const ambientLayer = new ScatterplotLayer({
+    id: "ambient-events",
+    data: ambient,
+    getPosition: (d: AmbientBlip) => [d.lon, d.lat],
+    getRadius: (d: AmbientBlip) => {
+      const hot = relevantIds.has(d.id);
+      const phase = (d.lon + d.lat) % 3; // stable per-blip phase
+      const breathe = reduced ? 1 : 0.7 + 0.5 * pulse(time + phase, hot ? 1.5 : 3.2);
+      return (hot ? 4.2 : 2.4) * breathe;
+    },
+    radiusUnits: "pixels",
+    radiusMinPixels: 1.5,
+    stroked: false,
+    getFillColor: (d: AmbientBlip): RGBA => {
+      if (relevantIds.has(d.id)) return rgba(CORAL, 230);
+      if (d.simulated) return rgba(AMBER, 200);
+      return [138, 155, 179, d.hasHeadline ? 150 : 95];
+    },
+    updateTriggers: { getRadius: [time, state], getFillColor: [state] },
+    parameters: { depthTest },
   });
 
   // soft teal "bloom" pass under the arcs (wide + translucent)
@@ -175,7 +256,7 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
     getWidth: (d: any) => (d.hot ? 9 : 6),
     getHeight: 0.5,
     widthUnits: "pixels",
-    parameters: { depthTest: false },
+    parameters: { depthTest },
   });
 
   const arcs = new ArcLayer({
@@ -190,7 +271,7 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
     getHeight: 0.5,
     widthUnits: "pixels",
     updateTriggers: { getSourceColor: [hotAlpha], getTargetColor: [hotAlpha] },
-    parameters: { depthTest: false },
+    parameters: { depthTest },
   });
 
   const rippleLayer = new ScatterplotLayer({
@@ -205,7 +286,7 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
     getLineWidth: (d: RippleDatum) => d.width,
     lineWidthUnits: "pixels",
     updateTriggers: { getRadius: [time], getLineColor: [time] },
-    parameters: { depthTest: false },
+    parameters: { depthTest },
   });
 
   // node glow halos (filled, low alpha) under the crisp node dots
@@ -220,23 +301,37 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
       return [c[0], c[1], c[2], Math.round(c[3] * 0.16)];
     },
     updateTriggers: { getRadius: [time, state], getFillColor: [state] },
-    parameters: { depthTest: false },
+    parameters: { depthTest },
   });
 
   const nodes = new ScatterplotLayer({
     id: "nodes",
     data: NODES,
+    pickable: true,
     getPosition: (d: any) => [d.lon, d.lat],
     getRadius: (d: any) => nodeRadius(state, d.id, d.kind, time, reduced),
     radiusUnits: "pixels",
     radiusMinPixels: 2,
+    radiusScale: 1,
     stroked: true,
-    getLineColor: [10, 20, 34, 255],
-    getLineWidth: 1,
+    getLineColor: (d: any) => (hoveredId === d.id ? [230, 237, 246, 255] : [10, 20, 34, 255]),
+    getLineWidth: (d: any) => (hoveredId === d.id ? 2 : 1),
     lineWidthUnits: "pixels",
     getFillColor: (d: any) => nodeColor(state, d.id, d.kind),
-    updateTriggers: { getRadius: [time, state], getFillColor: [state] },
-    parameters: { depthTest: false },
+    updateTriggers: { getRadius: [time, state], getFillColor: [state], getLineColor: [hoveredId], getLineWidth: [hoveredId] },
+    parameters: { depthTest },
+  });
+
+  // thin leader lines from clustered product nodes out to their fanned labels
+  const leaderLines = new LineLayer({
+    id: "label-leaders",
+    data: leaders,
+    getSourcePosition: (d: LabelDatum) => d.leaderFrom!,
+    getTargetPosition: (d: LabelDatum) => d.position,
+    getColor: [138, 155, 179, 90],
+    getWidth: 1,
+    widthUnits: "pixels",
+    parameters: { depthTest },
   });
 
   const text = new TextLayer({
@@ -247,18 +342,49 @@ export function buildLayers(state: MapState, time: number, reduced: boolean): La
     getColor: (d: LabelDatum) => d.color,
     getSize: (d: LabelDatum) => d.size,
     sizeUnits: "pixels",
-    getTextAnchor: "start",
+    getTextAnchor: (d: LabelDatum) => d.anchor,
     getAlignmentBaseline: "center",
-    getPixelOffset: [10, 0],
+    getPixelOffset: (d: LabelDatum) => d.pixelOffset,
     fontFamily: "'JetBrains Mono', ui-monospace, monospace",
     fontWeight: 500,
-    outlineColor: [6, 13, 23, 255],
-    outlineWidth: 3,
     fontSettings: { sdf: true, buffer: 8 },
-    background: false,
-    updateTriggers: { getText: [state], getColor: [state] },
-    parameters: { depthTest: false },
+    outlineColor: [6, 13, 23, 255],
+    outlineWidth: 2,
+    // background pill for legibility over land/arcs
+    background: true,
+    getBackgroundColor: [6, 13, 23, 215],
+    backgroundPadding: [7, 3, 7, 3],
+    getBorderColor: [86, 116, 152, 110],
+    getBorderWidth: 1,
+    // declutter: keep higher-priority labels, drop colliding lower ones
+    extensions: [new CollisionFilterExtension()],
+    collisionEnabled: true,
+    collisionGroup: "labels",
+    getCollisionPriority: (d: LabelDatum) => d.priority,
+    collisionTestProps: { sizeScale: 1 },
+    updateTriggers: {
+      getText: [state, hoveredId],
+      getColor: [state, hoveredId],
+      getPosition: [state, hoveredId],
+      getCollisionPriority: [state, hoveredId],
+    },
+    parameters: { depthTest },
   });
 
-  return [land, arcBloom, arcs, rippleLayer, halos, nodes, text];
+  if (globe) {
+    // opaque ocean sphere just under the land — writes depth so the back of the globe
+    // (its arcs, nodes, ripples) is correctly hidden.
+    const ocean = new SimpleMeshLayer({
+      id: "globe-ocean",
+      data: [{ position: [0, 0, 0] }],
+      mesh: getSphere(),
+      coordinateSystem: COORDINATE_SYSTEM.CARTESIAN,
+      getPosition: (d: { position: number[] }) => d.position as [number, number, number],
+      getColor: [8, 16, 28],
+      parameters: { depthTest: true },
+    });
+    return [ocean, land, ambientLayer, arcBloom, arcs, rippleLayer, halos, leaderLines, nodes, text];
+  }
+
+  return [land, ambientLayer, arcBloom, arcs, rippleLayer, halos, leaderLines, nodes, text];
 }

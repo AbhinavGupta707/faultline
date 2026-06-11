@@ -9,9 +9,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@deck.gl/core": "^9.0.38",
-    "@deck.gl/layers": "^9.0.38",
-    "@deck.gl/react": "^9.0.38",
+    "@deck.gl/core": "^9.3.3",
+    "@deck.gl/extensions": "^9.3.3",
+    "@deck.gl/layers": "^9.3.3",
+    "@deck.gl/mesh-layers": "^9.3.3",
+    "@deck.gl/react": "^9.3.3",
+    "@luma.gl/engine": "^9.3.3",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "topojson-client": "^3.1.0",
