@@ -1,0 +1,212 @@
+<!doctype html>
+<!-- Faultline — 30s cinematic intro. Open in Chrome, F11 fullscreen, screen-record.
+     Click anywhere or press R to restart the timeline. Narrate over it (no audio track).
+     Scene map: S1 0–6.5s title · S2 6.5–14.5s problem numbers · S3 14.5–22.5s invisible
+     cascade · S4 22.5–29.5s "the signals exist" → hold (you say: "That is the gap…"). -->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Faultline — intro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --base:#0A1422; --panel:#060D17; --ink:#E6EDF6; --dim:#8A9BB3;
+    --teal:#2DD4BF; --amber:#F5B544; --coral:#FF5C5C; --mint:#4ADE80;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { height:100%; background:#02060c; overflow:hidden; cursor:none; }
+  #stage {
+    position:relative; width:100vw; height:100vh;
+    background: radial-gradient(ellipse 120% 100% at 50% 42%, #081120 0%, #02060c 70%);
+    font-family:'Space Grotesk', system-ui, sans-serif; color:var(--ink);
+  }
+  .mono { font-family:'JetBrains Mono', monospace; }
+
+  /* starfield */
+  .star { position:absolute; border-radius:50%; background:#d6e4f7; animation: twinkle 4s ease-in-out infinite; }
+  @keyframes twinkle { 0%,100%{opacity:.18} 50%{opacity:.55} }
+
+  .scene { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; opacity:0; }
+
+  /* ---------- S1 · TITLE (0–6.5s) ---------- */
+  #s1 { animation: s1 6.9s linear forwards; }
+  @keyframes s1 { 0%{opacity:0} 4%{opacity:1} 91%{opacity:1} 100%{opacity:0} }
+  .ring { position:absolute; border-radius:50%; border:1px solid rgba(45,212,191,.35); }
+  .ring1 { width:46vmin; height:46vmin; animation: spin 26s linear infinite; border-style:dashed; }
+  .ring2 { width:62vmin; height:62vmin; border-color:rgba(45,212,191,.14); animation: spin 40s linear infinite reverse; }
+  .ring3 { width:62vmin; height:62vmin; border:none; box-shadow:0 0 120px 18px rgba(45,212,191,.08) inset; }
+  @keyframes spin { to { transform: rotate(360deg);} }
+  .ringdot { position:absolute; width:7px; height:7px; border-radius:50%; background:var(--teal); box-shadow:0 0 14px var(--teal); top:-4px; left:calc(50% - 3px); }
+  .ringdot.c { background:var(--coral); box-shadow:0 0 14px var(--coral); top:auto; bottom:-4px; }
+  #title { font-size:9.2vmin; font-weight:700; letter-spacing:.34em; text-indent:.34em;
+    animation: bloom 2.4s .9s cubic-bezier(.2,.7,.2,1) both; text-shadow:0 0 42px rgba(45,212,191,.35); }
+  @keyframes bloom { from{opacity:0; letter-spacing:.62em; filter:blur(10px)} to{opacity:1; letter-spacing:.34em; filter:blur(0)} }
+  #subtitle { margin-top:2.4vmin; font-size:2.05vmin; letter-spacing:.5em; text-indent:.5em; color:var(--dim);
+    text-transform:uppercase; animation: fadeup 1.4s 2.5s both; }
+  #s1line { margin-top:5vmin; font-size:2.5vmin; color:var(--ink); opacity:.9; animation: fadeup 1.4s 3.6s both; }
+  @keyframes fadeup { from{opacity:0; transform:translateY(2.4vmin)} to{opacity:1; transform:translateY(0)} }
+
+  /* ---------- S2 · THE NUMBERS (6.5–14.5s) ---------- */
+  #s2 { animation: s2 8.4s 6.5s linear forwards; }
+  @keyframes s2 { 0%{opacity:0} 5%{opacity:1} 93%{opacity:1} 100%{opacity:0} }
+  #s2 .kicker { font-size:1.9vmin; letter-spacing:.42em; text-transform:uppercase; color:var(--dim); margin-bottom:5vmin; animation: fadeup 1s 7s both; }
+  .statrow { display:flex; gap:6vmin; }
+  .stat { width:34vmin; padding:3.6vmin 3.2vmin; background:rgba(6,13,23,.72); border:1px solid rgba(138,155,179,.16);
+    border-top:2px solid var(--coral); border-radius:10px; }
+  .stat:nth-child(2) { border-top-color:var(--amber); }
+  .stat .big { font-size:8.6vmin; font-weight:700; color:var(--coral); line-height:1; }
+  .stat:nth-child(2) .big { color:var(--amber); }
+  .stat .lab { margin-top:1.6vmin; font-size:2.05vmin; color:var(--ink); line-height:1.45; }
+  .stat .cite { margin-top:1.6vmin; font-size:1.5vmin; color:var(--dim); letter-spacing:.14em; text-transform:uppercase; }
+  .stat.a { animation: cardin 1s 7.2s cubic-bezier(.2,.8,.25,1) both; }
+  .stat.b { animation: cardin 1s 7.9s cubic-bezier(.2,.8,.25,1) both; }
+  @keyframes cardin { from{opacity:0; transform:translateY(4vmin) scale(.96)} to{opacity:1; transform:none} }
+
+  /* ---------- S3 · INVISIBLE CASCADE (14.5–22.5s) ---------- */
+  #s3 { animation: s3 8.4s 14.5s linear forwards; }
+  @keyframes s3 { 0%{opacity:0} 5%{opacity:1} 93%{opacity:1} 100%{opacity:0} }
+  #s3 svg { width:86vmin; max-width:92vw; }
+  #s3 .cap { margin-top:3.5vmin; font-size:2.6vmin; height:3.4vmin; position:relative; width:86vmin; text-align:center; }
+  #s3 .cap span { position:absolute; inset:0; }
+  #cap1 { animation: capa 3.4s 15.2s both; color:var(--coral); }
+  #cap2 { animation: capa 3.6s 18.6s both; color:var(--ink); }
+  @keyframes capa { 0%{opacity:0; transform:translateY(1.4vmin)} 12%{opacity:1; transform:none} 88%{opacity:1} 100%{opacity:0} }
+  .edge { stroke:rgba(45,212,191,.5); stroke-width:1.6; fill:none; }
+  .edge.hot { stroke:var(--coral); stroke-width:2.6; stroke-dasharray:340; stroke-dashoffset:340; filter:drop-shadow(0 0 6px rgba(255,92,92,.7)); }
+  #e1 { animation: draw 1.1s 16.2s linear both; } #e2 { animation: draw 1.1s 17.4s linear both; }
+  #e3 { animation: draw 1.1s 18.6s linear both; } #e4 { animation: draw 1.1s 19.7s linear both; }
+  @keyframes draw { to { stroke-dashoffset:0; } }
+  .nd { fill:#1B2A3D; stroke:rgba(45,212,191,.7); stroke-width:1.4; }
+  .nd.lit-1 { animation: ignite .5s 17.3s both; } .nd.lit-2 { animation: ignite .5s 18.5s both; }
+  .nd.lit-3 { animation: ignite .5s 19.7s both; } .nd.lit-4 { animation: ignite .7s 20.8s both; }
+  @keyframes ignite { to { fill:#3d1620; stroke:var(--coral); } }
+  .nlabel { font-family:'JetBrains Mono',monospace; font-size:11.5px; fill:#8A9BB3; }
+  .pulse { fill:none; stroke:var(--coral); stroke-width:2; opacity:0; transform-origin:center; transform-box:fill-box; animation: ringout 2.2s 15.2s ease-out infinite; }
+  .pulse.p2 { animation-delay:15.9s; }
+  @keyframes ringout { 0%{opacity:.9; transform:scale(.25)} 80%{opacity:0; transform:scale(2.6)} 100%{opacity:0} }
+
+  /* ---------- S4 · THE SIGNALS EXIST (22.5–29.5s+hold) ---------- */
+  #s4 { animation: s4 8s 22.5s linear forwards; }
+  @keyframes s4 { 0%{opacity:0} 6%{opacity:1} 100%{opacity:1} }
+  #s4 .kicker { font-size:1.9vmin; letter-spacing:.42em; text-transform:uppercase; color:var(--dim); margin-bottom:4.6vmin; animation: fadeup .9s 23s both; }
+  .chips { display:flex; gap:2.4vmin; margin-bottom:5.4vmin; }
+  .chip { padding:1.3vmin 2.6vmin; border:1px solid rgba(45,212,191,.5); color:var(--teal); border-radius:99px;
+    font-family:'JetBrains Mono',monospace; font-size:1.9vmin; letter-spacing:.12em; background:rgba(45,212,191,.06);
+    box-shadow:0 0 18px rgba(45,212,191,.12); }
+  .chip:nth-child(1){animation: chipin .7s 23.3s both} .chip:nth-child(2){animation: chipin .7s 23.65s both}
+  .chip:nth-child(3){animation: chipin .7s 24s both} .chip:nth-child(4){animation: chipin .7s 24.35s both}
+  .chip:nth-child(5){animation: chipin .7s 24.7s both}
+  @keyframes chipin { from{opacity:0; transform:translateY(2.4vmin) scale(.92)} to{opacity:1; transform:none} }
+  #s4 .free { font-size:3.4vmin; font-weight:500; animation: fadeup 1s 25.4s both; }
+  #s4 .free em { color:var(--teal); font-style:normal; }
+  #s4 .missing { margin-top:3vmin; font-size:2.7vmin; color:var(--dim); animation: fadeup 1.2s 27s both; }
+  #s4 .missing b { color:var(--ink); font-weight:500; }
+
+  /* progress hairline */
+  #prog { position:absolute; bottom:0; left:0; height:2px; background:linear-gradient(90deg, var(--teal), var(--amber));
+    width:0; animation: prog 29.5s linear forwards; opacity:.5; }
+  @keyframes prog { to { width:100%; } }
+  #hint { position:absolute; top:2vmin; right:2.4vmin; font-size:1.5vmin; color:var(--dim); font-family:'JetBrains Mono',monospace;
+    animation: hintfade 1s 1.8s both; }
+  @keyframes hintfade { to { opacity:0; } }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="stars"></div>
+
+  <section class="scene" id="s1">
+    <div class="ring ring2"></div>
+    <div class="ring ring3"></div>
+    <div class="ring ring1"><span class="ringdot"></span><span class="ringdot c"></span></div>
+    <div id="title">FAULTLINE</div>
+    <div id="subtitle">Supply-Chain Control Tower</div>
+    <div id="s1line">Every supply chain has faultlines. Most are invisible — until they break.</div>
+  </section>
+
+  <section class="scene" id="s2">
+    <div class="kicker">The cost of not seeing them</div>
+    <div class="statrow">
+      <div class="stat a">
+        <div class="big"><span id="n1">0</span>%</div>
+        <div class="lab">of a full year's profits — lost to supply-chain disruptions every decade</div>
+        <div class="cite">McKinsey Global Institute</div>
+      </div>
+      <div class="stat b">
+        <div class="big"><span id="n2">0</span> yrs</div>
+        <div class="lab">between month-long supply shocks, on average — they are not rare events</div>
+        <div class="cite">McKinsey Global Institute</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="scene" id="s3">
+    <svg viewBox="0 0 860 300">
+      <circle class="pulse" cx="80" cy="226" r="16"/>
+      <circle class="pulse p2" cx="80" cy="226" r="16"/>
+      <path id="e1" class="edge hot" d="M92 220 C 200 150, 240 150, 320 168"/>
+      <path id="e2" class="edge hot" d="M334 160 C 420 120, 470 118, 540 130"/>
+      <path id="e3" class="edge hot" d="M554 126 C 630 110, 670 104, 740 96"/>
+      <path id="e4" class="edge" d="M332 178 C 430 210, 560 196, 738 110" opacity=".25"/>
+      <circle class="nd lit-1" cx="80"  cy="226" r="11"/>
+      <circle class="nd lit-2" cx="327" cy="167" r="11"/>
+      <circle class="nd lit-3" cx="547" cy="128" r="11"/>
+      <circle class="nd lit-4" cx="748" cy="98"  r="15"/>
+      <text class="nlabel" x="46"  y="262">TIER-3 · chemical plant</text>
+      <text class="nlabel" x="282" y="202">TIER-2 · ingredient blender</text>
+      <text class="nlabel" x="506" y="163">TIER-1 · manufacturer</text>
+      <text class="nlabel" x="712" y="135">YOUR SHELF</text>
+    </svg>
+    <div class="cap">
+      <span id="cap1">Today: a flood at a plant nobody in procurement has ever heard of.</span>
+      <span id="cap2">Six weeks later: an empty shelf. The failure was invisible the whole way.</span>
+    </div>
+  </section>
+
+  <section class="scene" id="s4">
+    <div class="kicker">And yet — the warning was public the entire time</div>
+    <div class="chips">
+      <span class="chip">USGS</span><span class="chip">NOAA</span><span class="chip">GDACS</span>
+      <span class="chip">FDA</span><span class="chip">GDELT</span>
+    </div>
+    <div class="free">The signals are <em>public</em>. <em>Real-time</em>. <em>Free</em>.</div>
+    <div class="missing">What's missing is something that can read them all, connect them to <b>your</b> suppliers — <b>and act</b>.</div>
+  </section>
+
+  <div id="prog"></div>
+  <div id="hint">R / click — restart</div>
+</div>
+<script>
+  // starfield
+  const stars = document.getElementById("stars");
+  let seed = 97;
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff);
+  for (let i = 0; i < 140; i++) {
+    const s = document.createElement("span");
+    s.className = "star";
+    const sz = rnd() < 0.85 ? 1 : 2;
+    s.style.cssText = `left:${rnd()*100}%;top:${rnd()*100}%;width:${sz}px;height:${sz}px;animation-delay:${rnd()*4}s;opacity:${.15+rnd()*.4}`;
+    stars.appendChild(s);
+  }
+  // count-ups (S2): 45% and 3.7yrs, starting ~7.4s
+  function countUp(el, target, dur, decimals, startAt) {
+    setTimeout(() => {
+      const t0 = performance.now();
+      (function tick(now) {
+        const p = Math.min((now - t0) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = (target * eased).toFixed(decimals);
+        if (p < 1) requestAnimationFrame(tick);
+      })(t0);
+    }, startAt);
+  }
+  countUp(document.getElementById("n1"), 45, 1700, 0, 7500);
+  countUp(document.getElementById("n2"), 3.7, 1700, 1, 8200);
+  // restart
+  const restart = () => location.reload();
+  addEventListener("keydown", (e) => { if (e.key.toLowerCase() === "r") restart(); });
+  addEventListener("click", restart);
+</script>
+</body>
+</html>
