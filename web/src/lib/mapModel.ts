@@ -28,6 +28,7 @@ export interface Ripple {
   title: string;
   placeName: string;
   eventType: string;
+  source: string;
   simulated: boolean;
 }
 
@@ -72,6 +73,7 @@ export interface MapState {
   focus: Focus | null; // agent's current scan focus
   approvalPending: { approval_id: string; summary: string } | null;
   lastSecured: SecuredSummary | null; // drives the "secured" narration callout
+  lastTool: { agent: string; tool: string; elastic: boolean; status: string } | null; // live narration line
 }
 
 export function initialMapState(): MapState {
@@ -94,6 +96,7 @@ export function initialMapState(): MapState {
     focus: null,
     approvalPending: null,
     lastSecured: null,
+    lastTool: null,
   };
 }
 
@@ -112,6 +115,7 @@ function applyEmit(s: MapState, emit: AgentEmitPayload): void {
           title: e.title,
           placeName: e.place_name,
           eventType: e.event_type,
+          source: e.source ?? "",
           simulated: e.simulated ?? false,
         });
       }
@@ -201,6 +205,11 @@ export function reduceMapState(messages: WsMessage[]): MapState {
         s.steps = pu.steps ?? [];
         s.activeStep = pu.active_step ?? null;
         s.phase = pu.active_step ?? (s.steps.length && s.steps.every((x) => x.status === "done") ? "done" : s.phase);
+        break;
+      }
+      case "tool.call": {
+        const t = msg.payload as { agent: string; tool: string; elastic?: boolean; status: string };
+        s.lastTool = { agent: t.agent, tool: t.tool, elastic: !!t.elastic, status: t.status };
         break;
       }
       case "agent.emit":

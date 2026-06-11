@@ -16,6 +16,8 @@ import type { NetNode } from "../../lib/map/network";
 import { API_BASE } from "../../lib/api";
 import { ambientField, fetchRecentEvents, fixtureEvents, tickerItems, type IntelEvent, type TickerItem } from "../../lib/intel";
 import Callouts from "./Callouts";
+import RippleLabels from "./RippleLabels";
+import NarrationLine from "./NarrationLine";
 import Ticker, { TICKER_HEIGHT } from "./Ticker";
 
 /** replay/demo mode keeps the intel feed deterministic; live mode polls the endpoint. */
@@ -56,16 +58,16 @@ const FLAT_VIEW: ViewState = {
 const GLOBE_VIEW: ViewState = {
   longitude: 24,
   latitude: 16,
-  zoom: 0.05,
+  zoom: 2.8, // fills ~85% of the panel height at 1440 (tuned visually)
   pitch: 0,
   bearing: 0,
-  minZoom: -1,
-  maxZoom: 5,
+  minZoom: 0.5,
+  maxZoom: 6,
 };
 
 const VIEW_CFG = {
-  flat: { initial: FLAT_VIEW, idleZoom: FLAT_VIEW.zoom, focusZoom: 2.3, rotate: false },
-  globe: { initial: GLOBE_VIEW, idleZoom: GLOBE_VIEW.zoom, focusZoom: 1.5, rotate: true },
+  flat: { initial: FLAT_VIEW, focusZoom: 2.3, rotate: false },
+  globe: { initial: GLOBE_VIEW, focusZoom: 2.8, rotate: true },
 } as const;
 
 const ROTATE_DEG_PER_SEC = 3.2;
@@ -126,6 +128,7 @@ function useMapEngine(view: MapViewKind, reduced: boolean, focus: Focus | null) 
   const target = useRef({ longitude: cfg.initial.longitude, latitude: cfg.initial.latitude, zoom: cfg.initial.zoom });
   const dwellUntil = useRef(0);
   const interacting = useRef(false);
+  const userZoomed = useRef(false); // once the user zooms, their zoom level wins and persists
   const lastEmit = useRef(0);
   const clock = useRef(0);
 
@@ -137,13 +140,15 @@ function useMapEngine(view: MapViewKind, reduced: boolean, focus: Focus | null) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view]);
 
-  // fly to a new agent focus (and dwell there before resuming idle rotation)
+  // fly to a new agent focus (and dwell there before resuming idle rotation).
+  // Zoom: hold the user's zoom if they've set one, else use focusZoom — never reset.
   useEffect(() => {
     if (!focus) return;
-    target.current = { longitude: focus.lon, latitude: focus.lat, zoom: cfg.focusZoom };
+    const zoom = userZoomed.current ? cur.current.zoom : cfg.focusZoom;
+    target.current = { longitude: focus.lon, latitude: focus.lat, zoom };
     dwellUntil.current = (typeof performance !== "undefined" ? performance.now() : 0) + 11_000;
     if (reduced) {
-      cur.current = { ...cur.current, longitude: focus.lon, latitude: focus.lat, zoom: cfg.focusZoom };
+      cur.current = { ...cur.current, longitude: focus.lon, latitude: focus.lat, zoom };
       setViewState({ ...cur.current });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -165,9 +170,9 @@ function useMapEngine(view: MapViewKind, reduced: boolean, focus: Focus | null) 
 
       const idle = ts > dwellUntil.current && !interacting.current;
       if (cfg.rotate && idle) {
+        // idle = slow longitude spin ONLY; zoom and latitude are preserved (never
+        // auto-return to a default), so user zoom and fly-to zoom both persist.
         target.current.longitude += ROTATE_DEG_PER_SEC * dt;
-        target.current.latitude += (cfg.initial.latitude - target.current.latitude) * 0.02;
-        target.current.zoom += (cfg.idleZoom - target.current.zoom) * 0.02;
       }
       // frame-rate-independent easing toward the target
       const e = 1 - Math.pow(1 - 0.09, dt * 60);
@@ -194,6 +199,7 @@ function useMapEngine(view: MapViewKind, reduced: boolean, focus: Focus | null) 
     target.current = { longitude: vs.longitude, latitude: vs.latitude, zoom: vs.zoom };
     const is = params.interactionState ?? {};
     interacting.current = !!(is.isDragging || is.isZooming || is.isPanning || is.isRotating);
+    if (is.isZooming) userZoomed.current = true; // user zoom wins from here on
     if (interacting.current) dwellUntil.current = (typeof performance !== "undefined" ? performance.now() : 0) + 9_000;
     setViewState({ ...cfg.initial, ...vs });
   }, [cfg.initial]);
@@ -201,10 +207,11 @@ function useMapEngine(view: MapViewKind, reduced: boolean, focus: Focus | null) 
   // imperative camera command (ticker clicks, faultline:focus from C2 evidence chips)
   const flyTo = useCallback(
     (lon: number, lat: number) => {
-      target.current = { longitude: lon, latitude: lat, zoom: cfg.focusZoom };
+      const zoom = userZoomed.current ? cur.current.zoom : cfg.focusZoom;
+      target.current = { longitude: lon, latitude: lat, zoom };
       dwellUntil.current = (typeof performance !== "undefined" ? performance.now() : 0) + 12_000;
       if (reduced) {
-        cur.current = { ...cur.current, longitude: lon, latitude: lat, zoom: cfg.focusZoom };
+        cur.current = { ...cur.current, longitude: lon, latitude: lat, zoom };
         setViewState({ ...cur.current });
       }
     },
@@ -254,8 +261,8 @@ export default function MapPanel() {
   const ticker = useMemo(() => tickerItems(events), [events]);
 
   const layers = useMemo(
-    () => buildLayers(state, time, reduced, view, hoveredId, ambient),
-    [state, time, reduced, view, hoveredId, ambient]
+    () => buildLayers(state, time, reduced, view, hoveredId, ambient, { lon: viewState.longitude, lat: viewState.latitude }),
+    [state, time, reduced, view, hoveredId, ambient, viewState.longitude, viewState.latitude]
   );
   const deckView = useMemo(() => (view === "globe" ? new GlobeView({ resolution: 12 }) : new MapView({ repeat: false })), [view]);
 
@@ -347,7 +354,10 @@ export default function MapPanel() {
       )}
 
       {size.w > 0 && (
-        <Callouts state={state} view={deckView} viewState={viewState as unknown as Record<string, number>} size={size} kind={view} />
+        <>
+          <RippleLabels state={state} view={deckView} viewState={viewState as unknown as Record<string, number>} size={size} kind={view} />
+          <Callouts state={state} view={deckView} viewState={viewState as unknown as Record<string, number>} size={size} kind={view} />
+        </>
       )}
 
       {/* live intelligence ticker (bottom strip) */}
@@ -413,6 +423,9 @@ export default function MapPanel() {
         <PhaseStepper steps={state.steps} activeStep={state.activeStep} />
         <div className="mono dim" style={{ fontSize: 10.5 }}>{PHASE_LABEL[state.phase] ?? state.phase}</div>
       </div>
+
+      {/* bottom-left — live narration line, above the legend */}
+      <NarrationLine state={state} bottom={TICKER_HEIGHT + 12 + 76} />
 
       {/* bottom-left — legend */}
       <Legend />
