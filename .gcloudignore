@@ -1,8 +1,11 @@
-# Cloud Build upload filter (docker contexts are repo-root; web never builds in docker)
+# Cloud Build upload filter (docker contexts are repo-root; web DOES build in docker
+# via infra/web.Dockerfile — only its heavy artifacts are excluded)
 .git
 .gcloudignore
-web/
 node_modules/
+web/dist/
+web/tsconfig.tsbuildinfo
+web/verify/
 **/__pycache__/
 **/.venv/
 *.md
