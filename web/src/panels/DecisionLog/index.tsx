@@ -3,7 +3,8 @@
  *  Timeline: timestamped entries; each entry's evidence chips cite source world-events
  *  ("GDACS · 08:42") and link to the source URL.
  *  Session C2 owns this folder. */
-import { Panel, EvidenceChip, Empty } from "../_shared/ui";
+import { EvidenceChip, Empty } from "../_shared/ui";
+import { AccordionPanel } from "../_shared/accordion";
 import { useFaultline } from "../_shared/store";
 import { reportUrl } from "../../lib/api";
 import { clock, humanize } from "../_shared/format";
@@ -12,8 +13,22 @@ export default function DecisionLog() {
   const s = useFaultline();
   const decisions = s.decisions;
 
+  const strip = decisions.length ? (
+    <>
+      <b>{decisions.length}</b> entries
+      {s.brief ? <> · <span style={{ color: "var(--secured)" }}>report ready</span></> : null}
+    </>
+  ) : (
+    <>awaiting reasoning</>
+  );
+
   return (
-    <Panel title="Decision Log" meta={decisions.length ? `${decisions.length} entries` : undefined}>
+    <AccordionPanel
+      id="decision"
+      title="Decision Log"
+      meta={decisions.length ? `${decisions.length} entries` : undefined}
+      strip={strip}
+    >
       <ReportHeader />
 
       {decisions.length ? (
@@ -42,7 +57,7 @@ export default function DecisionLog() {
       ) : (
         <Empty>the agent's reasoning will appear here, step by step</Empty>
       )}
-    </Panel>
+    </AccordionPanel>
   );
 }
 

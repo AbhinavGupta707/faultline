@@ -4,7 +4,8 @@
  *  A live-call panel renders call_event messages (Negotiator / Session E backend) to contract.
  *  Session C2 owns this folder. */
 import { useEffect, useRef, useState } from "react";
-import { Panel, StatusPill, Empty } from "../_shared/ui";
+import { StatusPill, Empty } from "../_shared/ui";
+import { AccordionPanel } from "../_shared/accordion";
 import {
   useFaultline,
   decideApproval,
@@ -14,15 +15,34 @@ import {
   type CallEvent,
   type VerifyResult,
 } from "../_shared/store";
-import { usd, days, pct, humanize } from "../_shared/format";
+import { usd, usdCompact, days, pct, humanize } from "../_shared/format";
 
 export default function ActionBoard() {
   const s = useFaultline();
   const exposures = [...s.exposures].sort((a, b) => a.rank - b.rank);
   const hasCall = s.callEvents.length > 0;
+  const atRiskTotal = exposures
+    .filter((e) => e.status === "at_risk")
+    .reduce((sum, e) => sum + e.dollars_at_risk_usd, 0);
+  const securedCount = exposures.filter((e) => e.status === "secured").length;
+
+  const strip = exposures.length ? (
+    <>
+      <b>{exposures.length}</b> exposures
+      {atRiskTotal > 0 ? <> · <span className="risk">{usdCompact(atRiskTotal)} at risk</span></> : null}
+      {securedCount ? ` · ${securedCount} secured` : ""}
+    </>
+  ) : (
+    <>awaiting exposures</>
+  );
 
   return (
-    <Panel title="Action Board" meta={exposures.length ? `${exposures.length} exposures` : undefined}>
+    <AccordionPanel
+      id="action"
+      title="Action Board"
+      meta={exposures.length ? `${exposures.length} exposures` : undefined}
+      strip={strip}
+    >
       {exposures.length ? (
         <div className="fl-exps">
           {exposures.map((e) => (
@@ -46,7 +66,7 @@ export default function ActionBoard() {
           <LiveCall events={s.callEvents} />
         </div>
       )}
-    </Panel>
+    </AccordionPanel>
   );
 }
 

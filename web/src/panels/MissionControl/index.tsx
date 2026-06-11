@@ -4,7 +4,8 @@
  *  the Approval-required gate card wired to approval.request / approval.decision.
  *  Session C2 owns this folder. Driven entirely by C1's replay/live ws stream. */
 import { useEffect, useRef, useState } from "react";
-import { Panel, EvidenceChip, Empty } from "../_shared/ui";
+import { EvidenceChip, Empty } from "../_shared/ui";
+import { AccordionPanel } from "../_shared/accordion";
 import { useFaultline, decideApproval, type PlanStep, type ToolCall } from "../_shared/store";
 import { usd, pct, humanize } from "../_shared/format";
 
@@ -25,13 +26,41 @@ export default function MissionControl() {
 
   const goal = deriveGoal(s);
   const confidence = deriveConfidence(s);
-  const pending = s.approval && !s.approvalResolved[s.approval.approval_id] ? s.approval : null;
-  const resolved = s.approval && s.approvalResolved[s.approval.approval_id];
+  const step = s.plan?.active_step ?? null;
+  const explicitlyResolved = s.approval ? s.approvalResolved[s.approval.approval_id] : undefined;
+  // The live gate shows only while the plan sits on the approval step. Once the run
+  // advances (or the operator decides), it collapses to a confirmation — so unattended
+  // replay (where C1's harness drops the scripted decision) stays coherent.
+  const gateActive = step === "approve" && !explicitlyResolved;
+  const pending = s.approval && gateActive ? s.approval : null;
+  let resolved: { approved: boolean; note?: string } | null = null;
+  if (s.approval && !gateActive) resolved = explicitlyResolved ?? { approved: true };
 
   const meta = `mode ${deriveMode(s)}`;
+  const activeLabel = steps.find((x) => x.status === "active")?.label;
+  const stripPhase = activeLabel ?? (steps.every((x) => x.status === "done") ? "Run complete" : "Idle");
+  const strip = (
+    <>
+      <b>{stripPhase}</b>
+      {pending ? <span className="risk"> · approval required</span> : null}
+      {s.toolCalls.length ? ` · ${s.toolCalls.length} calls` : ""}
+    </>
+  );
 
   return (
-    <Panel title="Mission Control" meta={meta}>
+    <AccordionPanel id="mission" title="Mission Control" meta={meta} strip={strip}>
+      {/* approval gate floats to the top when pending, so the gate is unmissable */}
+      {pending && (
+        <div style={{ marginBottom: 13 }}>
+          <ApprovalGate
+            approvalId={pending.approval_id}
+            summary={pending.summary}
+            dollars={pending.context?.dollars_at_risk_total_usd}
+            actionKind={pending.action_kind}
+          />
+        </div>
+      )}
+
       {/* current goal */}
       <div style={{ marginBottom: 12 }}>
         <div className="fl-eyebrow">Current goal</div>
@@ -81,17 +110,6 @@ export default function MissionControl() {
         </div>
       </div>
 
-      {/* approval gate */}
-      {pending && (
-        <div style={{ marginTop: 13 }}>
-          <ApprovalGate
-            approvalId={pending.approval_id}
-            summary={pending.summary}
-            dollars={pending.context?.dollars_at_risk_total_usd}
-            actionKind={pending.action_kind}
-          />
-        </div>
-      )}
       {resolved && (
         <div className="fl-gate fl-gate--resolved" style={{ marginTop: 13 }}>
           <div className="fl-gate__eyebrow" style={{ color: resolved.approved ? "var(--secured)" : "var(--risk)" }}>
@@ -101,7 +119,7 @@ export default function MissionControl() {
           {resolved.note && <div className="fl-gate__summary fl-dim">“{resolved.note}”</div>}
         </div>
       )}
-    </Panel>
+    </AccordionPanel>
   );
 }
 
