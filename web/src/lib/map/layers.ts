@@ -216,6 +216,9 @@ export function buildLayers(
     getFillColor: [27, 42, 61, 255],
     getLineColor: [86, 116, 152, 70],
     lineWidthMinPixels: 0.7,
+    // _full3d makes the polygon tesselator subdivide along the sphere so concave
+    // countries (Brazil, etc.) fill correctly on the globe instead of leaving holes.
+    _full3d: globe,
     parameters: { depthTest },
   });
 
