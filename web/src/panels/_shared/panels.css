@@ -40,6 +40,49 @@
   to { opacity: 1; transform: none; }
 }
 
+/* ── first-open intro overlay ───────────────────────────────────────────────── */
+.fl-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: rgba(6, 13, 23, 0.8);
+  -webkit-backdrop-filter: blur(3px);
+  backdrop-filter: blur(3px);
+  animation: fl-fade 0.3s ease;
+  padding: 20px;
+}
+@keyframes fl-fade { from { opacity: 0; } to { opacity: 1; } }
+.fl-intro__card {
+  width: min(440px, 92vw);
+  background: var(--panel);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 28px 28px 20px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  animation: fl-intro-rise 0.34s ease;
+}
+@keyframes fl-intro-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.fl-intro__brand { font-weight: 600; letter-spacing: 0.14em; font-size: 18px; color: var(--ink); }
+.fl-intro__tag {
+  font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-dim); margin-top: 4px;
+}
+.fl-intro__bullets { list-style: none; margin: 18px 0 22px; padding: 0; display: flex; flex-direction: column; gap: 13px; }
+.fl-intro__bullets li { position: relative; padding-left: 22px; font-size: 14px; line-height: 1.4; color: var(--ink); }
+.fl-intro__bullets li::before {
+  content: ""; position: absolute; left: 3px; top: 7px; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--signal); box-shadow: 0 0 8px var(--signal);
+}
+.fl-intro__cta { font-size: 14px; padding: 11px; text-align: center; }
+.fl-intro__skip {
+  background: none; border: none; color: var(--ink-dim); font-size: 12px; cursor: pointer;
+  margin: 12px auto 0; padding: 4px 8px;
+}
+.fl-intro__skip:hover { color: var(--ink); }
+
 /* ── accordion strips (collapsed panels) ────────────────────────────────────── */
 .fl-strip {
   display: flex;

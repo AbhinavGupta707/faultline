@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import { EvidenceChip, Empty } from "../_shared/ui";
 import { AccordionPanel } from "../_shared/accordion";
+import IntroOverlay from "../_shared/IntroOverlay";
 import { useFaultline, decideApproval, type PlanStep, type ToolCall } from "../_shared/store";
 import { usd, pct, humanize } from "../_shared/format";
 import { CountUp } from "../_shared/anim";
@@ -49,7 +50,9 @@ export default function MissionControl() {
   );
 
   return (
-    <AccordionPanel id="mission" title="Mission Control" meta={meta} strip={strip}>
+    <>
+      <IntroOverlay />
+      <AccordionPanel id="mission" title="Mission Control" meta={meta} strip={strip}>
       {/* approval gate floats to the top when pending, so the gate is unmissable */}
       {pending && (
         <div style={{ marginBottom: 13 }}>
@@ -120,7 +123,8 @@ export default function MissionControl() {
           {resolved.note && <div className="fl-gate__summary fl-dim">“{resolved.note}”</div>}
         </div>
       )}
-    </AccordionPanel>
+      </AccordionPanel>
+    </>
   );
 }
 
