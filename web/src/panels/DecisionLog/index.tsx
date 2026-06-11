@@ -34,7 +34,7 @@ export default function DecisionLog() {
       {decisions.length ? (
         <div className="fl-timeline">
           {decisions.map((d) => (
-            <div className="fl-entry" key={d.decision_id}>
+            <div className="fl-entry fl-enter" key={d.decision_id}>
               <div className="fl-entry__time">{clock(d.ts)}</div>
               <div className="fl-entry__body">
                 <div className="fl-entry__title">
@@ -71,7 +71,9 @@ function ReportHeader() {
   return (
     <div className="fl-report">
       <div className="fl-report__metric">
-        <span className="fl-report__value">{brief?.headline_metric?.value ?? "—"}</span>
+        <span className={`fl-report__value ${ready ? "fl-enter" : ""}`} key={brief?.report_id ?? "pending"}>
+          {brief?.headline_metric?.value ?? "—"}
+        </span>
         <span className="fl-report__label">{brief?.headline_metric?.label ?? "$ at risk averted"}</span>
       </div>
       <div className="fl-report__title">

@@ -8,6 +8,7 @@ import { EvidenceChip, Empty } from "../_shared/ui";
 import { AccordionPanel } from "../_shared/accordion";
 import { useFaultline, decideApproval, type PlanStep, type ToolCall } from "../_shared/store";
 import { usd, pct, humanize } from "../_shared/format";
+import { CountUp } from "../_shared/anim";
 
 const CANONICAL_STEPS: { id: string; label: string }[] = [
   { id: "scan", label: "Scan world events" },
@@ -134,7 +135,7 @@ function ToolStream({ calls }: { calls: ToolCall[] }) {
   return (
     <div className="fl-tools" ref={ref}>
       {recent.map((c) => (
-        <div key={c.call_id} className={`fl-tool ${c.elastic ? "fl-tool--elastic" : ""}`}>
+        <div key={c.call_id} className={`fl-tool fl-enter ${c.elastic ? "fl-tool--elastic" : ""}`}>
           <span className={`fl-dot ${dotClass(c.status)}`} />
           {c.elastic && <span className="fl-tool__badge">Elastic</span>}
           <span className="fl-tool__name">{c.tool}</span>
@@ -170,7 +171,7 @@ function ApprovalGate({
       <div className="fl-gate__summary">{summary}</div>
       {dollars != null && (
         <div>
-          <span className="fl-gate__metric">{usd(dollars)}</span>
+          <span className="fl-gate__metric"><CountUp value={dollars} format={usd} /></span>
           <span className="fl-eyebrow" style={{ marginLeft: 8 }}>at risk</span>
         </div>
       )}

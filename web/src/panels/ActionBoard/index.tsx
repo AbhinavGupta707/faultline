@@ -16,6 +16,7 @@ import {
   type VerifyResult,
 } from "../_shared/store";
 import { usd, usdCompact, days, pct, humanize } from "../_shared/format";
+import { CountUp } from "../_shared/anim";
 
 export default function ActionBoard() {
   const s = useFaultline();
@@ -104,7 +105,9 @@ function ExposureRow({
           <span className="k">cover</span>
         </span>
         <span className="fl-exp__metric">
-          <span className={`v ${exp.status === "at_risk" ? "v--risk" : ""}`}>{usd(exp.dollars_at_risk_usd)}</span>
+          <span className={`v ${exp.status === "at_risk" ? "v--risk" : ""}`}>
+            <CountUp value={exp.dollars_at_risk_usd} format={usd} />
+          </span>
           <span className="k">at risk</span>
         </span>
         <StatusPill status={exp.status} />

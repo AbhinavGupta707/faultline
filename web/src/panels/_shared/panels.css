@@ -134,6 +134,25 @@
   50% { opacity: 0.35; transform: scale(0.75); }
 }
 
+/* ── enter / flash on freshly-landed items (decision entries, tool chips) ────── */
+.fl-enter { animation: fl-enter 0.42s ease, fl-flash 0.95s ease; }
+@keyframes fl-enter {
+  0% { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes fl-flash {
+  0% { box-shadow: inset 0 0 0 200px rgba(245, 181, 68, 0.13); }
+  100% { box-shadow: inset 0 0 0 200px rgba(245, 181, 68, 0); }
+}
+
+/* ── status-pill transition pulse (esp. at_risk → secured) ──────────────────── */
+.fl-pill--pulse { animation: fl-pill-pulse 0.9s ease; }
+@keyframes fl-pill-pulse {
+  0% { transform: scale(1); filter: drop-shadow(0 0 0 currentColor); }
+  35% { transform: scale(1.16); filter: drop-shadow(0 0 7px currentColor); }
+  100% { transform: scale(1); filter: drop-shadow(0 0 0 currentColor); }
+}
+
 .fl-pill {
   display: inline-flex;
   align-items: center;

@@ -1,7 +1,8 @@
 /** Small presentational primitives shared by the C2 panels. */
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { ExposureStatus, RelevantEvent } from "./store";
 import { hhmm, sourceLabel } from "./format";
+import { prefersReducedMotion } from "./anim";
 
 export function Panel({
   title,
@@ -27,8 +28,18 @@ export function Panel({
 
 export function StatusPill({ status }: { status: ExposureStatus }) {
   const label = status === "at_risk" ? "At risk" : status === "watch" ? "Watch" : "Secured";
+  const prev = useRef(status);
+  const [pulse, setPulse] = useState(false);
+  useEffect(() => {
+    if (prev.current === status) return;
+    prev.current = status;
+    if (prefersReducedMotion()) return;
+    setPulse(true);
+    const id = setTimeout(() => setPulse(false), 900);
+    return () => clearTimeout(id);
+  }, [status]);
   return (
-    <span className={`fl-pill fl-pill--${status}`}>
+    <span className={`fl-pill fl-pill--${status} ${pulse ? "fl-pill--pulse" : ""}`}>
       <span className={`fl-dot fl-dot--${status}`} />
       {label}
     </span>
