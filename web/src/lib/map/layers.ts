@@ -17,7 +17,10 @@ const EARTH_RADIUS = 6_371_000;
 // one shared sphere mesh for the globe ocean (built lazily, reused across renders)
 let sphereMesh: SphereGeometry | null = null;
 const getSphere = () =>
-  (sphereMesh ??= new SphereGeometry({ radius: EARTH_RADIUS * 0.997, nlat: 36, nlong: 72 }));
+  // radius set well below the surface so large land triangles (whose flat chords sag
+  // toward the centre on the sphere) never dip beneath the ocean and get depth-occluded
+  // into black holes. The ~1.5% limb inset is imperceptible at globe scale.
+  (sphereMesh ??= new SphereGeometry({ radius: EARTH_RADIUS * 0.985, nlat: 48, nlong: 96 }));
 
 type RGBA = [number, number, number, number];
 const TEAL = [45, 212, 191] as const;
@@ -216,10 +219,12 @@ export function buildLayers(
     getFillColor: [27, 42, 61, 255],
     getLineColor: [86, 116, 152, 70],
     lineWidthMinPixels: 0.7,
-    // _full3d makes the polygon tesselator subdivide along the sphere so concave
-    // countries (Brazil, etc.) fill correctly on the globe instead of leaving holes.
-    _full3d: globe,
-    parameters: { depthTest },
+    // Globe fill correctness: _full3d uses the 3D tesselator (concave countries fill on
+    // the sphere), and cullMode:'none' stops back-face culling from dropping whole
+    // countries whose ring winding is reversed in the source topology. Together they
+    // eliminate the black holes. (_full3d must be set on the fill sublayer.)
+    _subLayerProps: { "polygons-fill": { _full3d: globe } },
+    parameters: { depthTest, cullMode: globe ? "none" : undefined },
   });
 
   // ambient "recent events" field — faint grey breathing blips; Watcher-relevant ones
