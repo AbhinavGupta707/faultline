@@ -1,0 +1,15 @@
+# Cloud Build upload filter for the web Cloud Run fallback (infra/web.Dockerfile).
+# Unlike the default .gcloudignore (which excludes web/ because web normally ships
+# via Firebase), this build COMPILES web/ inside Docker, so the source must upload.
+# We still drop the heavy/derived dirs to keep the context small.
+.git
+.gcloudignore
+infra/web.gcloudignore
+node_modules/
+web/node_modules/
+web/dist/
+**/__pycache__/
+**/.venv/
+**/*.tsbuildinfo
+.env
+*.key

@@ -1,1 +1,8 @@
+# Normalize line endings to LF on commit; prevents Windows/WSL CRLF churn.
+* text=auto eol=lf
+*.sh text eol=lf
+*.png binary
+*.jpg binary
+*.pdf binary
+
 STATUS.md merge=union
