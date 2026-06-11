@@ -211,6 +211,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="faultline-agent", lifespan=lifespan)
 
+# The web SPA is served from a different Cloud Run origin, so its browser fetch of
+# /analytics/summary (and /events/recent, /report) needs CORS. Without this the fetch
+# is silently blocked and the Analytics panel falls back to its bundled fixture.
+# Public, read-only GETs with no credentials → allow_origins=["*"] is safe. (WS is exempt.)
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
+
+app.add_middleware(
+    CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"],
+)
+
 # Session G's depth routes (GET /analytics/summary, GET /report/{run_id}) — the
 # phase0 registry has no router; the merged depth lane provides one (HANDOFF.md).
 try:
