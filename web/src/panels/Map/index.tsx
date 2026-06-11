@@ -12,6 +12,7 @@ import { useEventStream } from "../../lib/useStream";
 import { reduceMapState } from "../../lib/mapModel";
 import type { Focus } from "../../lib/mapModel";
 import { buildLayers, type MapViewKind } from "../../lib/map/layers";
+import type { NetNode } from "../../lib/map/network";
 import Callouts from "./Callouts";
 
 interface ViewState {
@@ -200,10 +201,39 @@ export default function MapPanel() {
 
   const [boxRef, size] = useMeasure<HTMLElement>();
 
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+
   const state = useMemo(() => reduceMapState(messages), [messages]);
   const { viewState, time, onViewStateChange } = useMapEngine(view, reduced, state.focus);
-  const layers = useMemo(() => buildLayers(state, time, reduced, view), [state, time, reduced, view]);
+  const layers = useMemo(() => buildLayers(state, time, reduced, view, hoveredId), [state, time, reduced, view, hoveredId]);
   const deckView = useMemo(() => (view === "globe" ? new GlobeView({ resolution: 12 }) : new MapView({ repeat: false })), [view]);
+
+  const getTooltip = ({ object, layer }: { object?: NetNode; layer?: { id: string } }) => {
+    if (!object || layer?.id !== "nodes") return null;
+    const n = object;
+    let detail: string;
+    if (n.kind === "product") {
+      const ex = state.exposureByProduct[n.id];
+      const st = state.secured.has(n.id) ? "secured" : ex?.status?.replace("_", " ") ?? "nominal";
+      detail = `Finished product · ${st}${ex ? ` · ${ex.daysOfCover}d cover` : ""}`;
+    } else {
+      const flag = state.recommended === n.id ? " · recommended alternate" : "";
+      detail = `${n.short}${n.country ? ` · ${n.country}` : ""}${flag}`;
+    }
+    return {
+      html: `<div style="font-weight:600;margin-bottom:2px">${n.name}</div><div style="opacity:.8">${detail}</div>`,
+      style: {
+        background: "rgba(6,13,23,0.95)",
+        color: "#E6EDF6",
+        border: "1px solid rgba(138,155,179,0.3)",
+        borderRadius: "6px",
+        fontSize: "11px",
+        fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+        padding: "7px 9px",
+        maxWidth: "240px",
+      },
+    };
+  };
 
   const approve = () => {
     if (!state.approvalPending) return;
@@ -237,7 +267,9 @@ export default function MapPanel() {
           width={size.w}
           height={size.h}
           style={{ position: "absolute", inset: "0" }}
-          getCursor={() => "crosshair"}
+          getCursor={({ isDragging }) => (isDragging ? "grabbing" : hoveredId ? "pointer" : "crosshair")}
+          onHover={(info) => setHoveredId(info.layer?.id === "nodes" ? ((info.object as NetNode | undefined)?.id ?? null) : null)}
+          getTooltip={getTooltip as never}
         />
       )}
 
