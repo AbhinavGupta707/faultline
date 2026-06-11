@@ -12,6 +12,7 @@ import { useEventStream } from "../../lib/useStream";
 import { reduceMapState } from "../../lib/mapModel";
 import type { Focus } from "../../lib/mapModel";
 import { buildLayers, type MapViewKind } from "../../lib/map/layers";
+import Callouts from "./Callouts";
 
 interface ViewState {
   longitude: number;
@@ -238,6 +239,10 @@ export default function MapPanel() {
           style={{ position: "absolute", inset: "0" }}
           getCursor={() => "crosshair"}
         />
+      )}
+
+      {size.w > 0 && (
+        <Callouts state={state} view={deckView} viewState={viewState as unknown as Record<string, number>} size={size} kind={view} />
       )}
 
       {/* top-left — identity + run */}

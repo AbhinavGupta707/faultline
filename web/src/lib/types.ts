@@ -164,6 +164,9 @@ export interface VerifyResultPayload {
   exposure_id: string;
   product_id: string;
   gap_closed: boolean;
+  days_of_cover?: number;
+  alternate_lead_time_days?: number;
+  margin_days?: number;
   status_change?: { from: ExposureStatus; to: ExposureStatus };
 }
 

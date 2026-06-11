@@ -44,6 +44,13 @@ export interface Focus {
   label: string;
 }
 
+export interface SecuredSummary {
+  productId: string;
+  supplierName: string;
+  leadDays?: number;
+  coverDays?: number;
+}
+
 export interface MapState {
   mode: "live" | "simulated";
   feedsOk: boolean;
@@ -64,6 +71,7 @@ export interface MapState {
   recommended: string | null; // gold scan-pulse supplier
   focus: Focus | null; // agent's current scan focus
   approvalPending: { approval_id: string; summary: string } | null;
+  lastSecured: SecuredSummary | null; // drives the "secured" narration callout
 }
 
 export function initialMapState(): MapState {
@@ -85,6 +93,7 @@ export function initialMapState(): MapState {
     recommended: null,
     focus: null,
     approvalPending: null,
+    lastSecured: null,
   };
 }
 
@@ -158,6 +167,12 @@ function applyEmit(s: MapState, emit: AgentEmitPayload): void {
         s.secured.add(vr.product_id);
         const ex = s.exposureByProduct[vr.product_id];
         if (ex) ex.status = "secured";
+        s.lastSecured = {
+          productId: vr.product_id,
+          supplierName: s.recommended ? nodeById(s.recommended)?.name ?? "alternate supplier" : "alternate supplier",
+          leadDays: vr.alternate_lead_time_days,
+          coverDays: vr.days_of_cover,
+        };
       }
       break;
     }
