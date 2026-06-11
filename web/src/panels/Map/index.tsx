@@ -438,7 +438,7 @@ export default function MapPanel() {
       </div>
 
       {/* bottom-left — live narration line, above the legend */}
-      <NarrationLine state={state} bottom={TICKER_HEIGHT + 12 + 76} />
+      <NarrationLine state={state} bottom={TICKER_HEIGHT + 12 + 98} />
 
       {/* bottom-left — legend */}
       <Legend />
