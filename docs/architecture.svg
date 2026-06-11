@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 700" font-family="'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#5b6b82"/>
+    </marker>
+    <marker id="arrT" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0L10 5L0 10z" fill="#2bb9a8"/>
+    </marker>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="920" height="700" rx="14" fill="#0A1422"/>
+  <text x="32" y="42" fill="#E8EEF6" font-size="24" font-weight="700">Faultline — Supply-Chain Control Tower</text>
+  <text x="32" y="66" fill="#7c8ba1" font-size="13">Live world feeds → Elastic semantic brain → Gemini-3 agent loop → map · voice · PO · BigQuery</text>
+
+  <!-- ───────── Layer 1: live feeds ───────── -->
+  <g font-size="12">
+    <rect x="32" y="92" width="610" height="64" rx="10" fill="#13202b" stroke="#2c3a4d"/>
+    <text x="44" y="112" fill="#f0b85c" font-size="12" font-weight="600">LIVE WORLD FEEDS</text>
+    <g fill="#cdd8e6" font-size="12">
+      <text x="44" y="138">USGS quakes</text>
+      <text x="150" y="138">NOAA alerts</text>
+      <text x="256" y="138">GDACS disasters</text>
+      <text x="392" y="138">openFDA recalls</text>
+      <text x="520" y="138">GDELT news</text>
+    </g>
+  </g>
+  <!-- scheduler -->
+  <rect x="670" y="92" width="218" height="64" rx="10" fill="#13202b" stroke="#2c3a4d"/>
+  <text x="682" y="112" fill="#9aa7bb" font-size="11" font-weight="600">CLOUD SCHEDULER</text>
+  <text x="682" y="134" fill="#cdd8e6">POST /ingest every 5 min</text>
+  <text x="682" y="150" fill="#6b7a90" font-size="10">OIDC · private invoke</text>
+
+  <!-- feed_ingest -->
+  <rect x="32" y="190" width="610" height="54" rx="10" fill="#152436" stroke="#35506e"/>
+  <text x="44" y="212" fill="#7fb2ff" font-size="12" font-weight="600">feed_ingest</text>
+  <text x="120" y="212" fill="#6b7a90" font-size="10">Cloud Run</text>
+  <text x="44" y="232" fill="#cdd8e6" font-size="12">normalize · geocode · ELSER-embed on ingest</text>
+
+  <!-- Elasticsearch -->
+  <rect x="32" y="278" width="320" height="92" rx="10" fill="#0f2b2a" stroke="#2bb9a8"/>
+  <text x="44" y="300" fill="#2bdcc6" font-size="12" font-weight="700">ELASTICSEARCH  ·  ELSER</text>
+  <text x="44" y="322" fill="#bfe9e2" font-size="11">world-events · suppliers · supplier-graph-paths</text>
+  <text x="44" y="340" fill="#bfe9e2" font-size="11">inventory · decision-log  (9 indices)</text>
+  <text x="44" y="360" fill="#79a7a0" font-size="10">433+ live events, refreshed every 5 min</text>
+
+  <!-- Elastic MCP -->
+  <rect x="370" y="278" width="272" height="92" rx="10" fill="#0f2b2a" stroke="#2bb9a8"/>
+  <text x="382" y="300" fill="#2bdcc6" font-size="12" font-weight="700">ELASTIC AGENT BUILDER · MCP</text>
+  <text x="382" y="320" fill="#bfe9e2" font-size="10.5">search_events · match_event_to_suppliers</text>
+  <text x="382" y="336" fill="#bfe9e2" font-size="10.5">traverse_supply_graph · lookup_exposure</text>
+  <text x="382" y="352" fill="#bfe9e2" font-size="10.5">find_alternate_suppliers · write_decision</text>
+
+  <!-- agents -->
+  <rect x="32" y="404" width="610" height="96" rx="10" fill="#1c1733" stroke="#7b6cf0"/>
+  <text x="44" y="426" fill="#b3a6ff" font-size="12" font-weight="700">agents  ·  Gemini-3 multi-agent loop (ADK)</text>
+  <text x="180" y="426" fill="#6b7a90" font-size="10">Cloud Run · FastAPI + WebSocket</text>
+  <g font-size="11.5" fill="#ded7ff">
+    <rect x="44" y="438" width="74" height="26" rx="6" fill="#241d40"/><text x="52" y="455">Watcher</text>
+    <rect x="124" y="438" width="66" height="26" rx="6" fill="#241d40"/><text x="132" y="455">Tracer</text>
+    <rect x="196" y="438" width="78" height="26" rx="6" fill="#241d40"/><text x="204" y="455">Assessor</text>
+    <rect x="280" y="438" width="104" height="26" rx="6" fill="#3a2a14" stroke="#f0b85c"/><text x="288" y="455" fill="#f6c878">⏸ Approval</text>
+    <rect x="390" y="438" width="86" height="26" rx="6" fill="#241d40"/><text x="398" y="455">Resourcer</text>
+    <rect x="482" y="438" width="92" height="26" rx="6" fill="#241d40"/><text x="490" y="455">Negotiator</text>
+    <rect x="580" y="438" width="52" height="26" rx="6" fill="#241d40"/><text x="588" y="455">Verify</text>
+  </g>
+  <text x="44" y="487" fill="#8a7fc7" font-size="10.5">+ depth lane: Briefer · Enricher · BigQuery export · pharma vertical</text>
+
+  <!-- surfaces -->
+  <rect x="32" y="540" width="190" height="120" rx="10" fill="#152436" stroke="#35506e"/>
+  <text x="44" y="562" fill="#7fb2ff" font-size="12" font-weight="600">web</text>
+  <text x="84" y="562" fill="#6b7a90" font-size="10">Cloud Run</text>
+  <text x="44" y="584" fill="#cdd8e6" font-size="11">deck.gl living map</text>
+  <text x="44" y="602" fill="#cdd8e6" font-size="11">4 panels · approval</text>
+  <text x="44" y="620" fill="#cdd8e6" font-size="11">what-if · analytics</text>
+  <text x="44" y="642" fill="#6b7a90" font-size="10">WS stream from agents</text>
+
+  <rect x="238" y="540" width="190" height="120" rx="10" fill="#152436" stroke="#35506e"/>
+  <text x="250" y="562" fill="#7fb2ff" font-size="12" font-weight="600">voice_gateway</text>
+  <text x="250" y="584" fill="#cdd8e6" font-size="11">Gemini Live audio</text>
+  <text x="250" y="602" fill="#cdd8e6" font-size="11">negotiation call</text>
+  <text x="250" y="620" fill="#cdd8e6" font-size="11">voice approval (STT)</text>
+  <text x="250" y="642" fill="#6b7a90" font-size="10">native-audio · Cloud Run</text>
+
+  <rect x="444" y="540" width="190" height="120" rx="10" fill="#152436" stroke="#35506e"/>
+  <text x="456" y="562" fill="#7fb2ff" font-size="12" font-weight="600">po_generator</text>
+  <text x="456" y="584" fill="#cdd8e6" font-size="11">contingent PO → PDF</text>
+  <text x="456" y="602" fill="#cdd8e6" font-size="11">stored in GCS</text>
+  <text x="456" y="642" fill="#6b7a90" font-size="10">Cloud Run</text>
+
+  <rect x="650" y="540" width="238" height="120" rx="10" fill="#1a1d12" stroke="#b8a13a"/>
+  <text x="662" y="562" fill="#e6cf63" font-size="12" font-weight="700">BigQuery</text>
+  <text x="662" y="584" fill="#e3dcc0" font-size="11">runs · exposures · decisions</text>
+  <text x="662" y="602" fill="#e3dcc0" font-size="11">risk history · chokepoints</text>
+  <text x="662" y="620" fill="#e3dcc0" font-size="11">60-day labeled backfill</text>
+  <text x="662" y="642" fill="#8c8559" font-size="10">analytics panel source</text>
+
+  <!-- arrows -->
+  <!-- feeds+scheduler -> feed_ingest -->
+  <path d="M337 156 L337 188" stroke="#5b6b82" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+  <path d="M779 156 L779 175 L337 175" stroke="#5b6b82" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+  <!-- feed_ingest -> ES -->
+  <path d="M192 244 L192 276" stroke="#5b6b82" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+  <!-- ES <-> MCP -->
+  <path d="M352 324 L368 324" stroke="#2bb9a8" stroke-width="1.6" fill="none" marker-end="url(#arrT)" marker-start="url(#arrT)"/>
+  <!-- agents <-> MCP (tool calls) -->
+  <path d="M506 404 L506 372" stroke="#2bb9a8" stroke-width="1.8" fill="none" marker-end="url(#arrT)" marker-start="url(#arrT)"/>
+  <text x="514" y="392" fill="#2bdcc6" font-size="10">MCP tool calls</text>
+  <!-- agents -> surfaces -->
+  <path d="M127 500 L127 538" stroke="#5b6b82" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+  <path d="M333 500 L333 538" stroke="#5b6b82" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+  <path d="M539 500 L539 538" stroke="#5b6b82" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+  <path d="M620 500 L769 500 L769 538" stroke="#5b6b82" stroke-width="1.6" fill="none" marker-end="url(#arr)"/>
+
+  <!-- legend -->
+  <g font-size="10.5">
+    <rect x="688" y="404" width="200" height="120" rx="10" fill="#0f1622" stroke="#243144"/>
+    <text x="700" y="424" fill="#9aa7bb" font-weight="600">LEGEND</text>
+    <rect x="700" y="434" width="12" height="12" rx="3" fill="#0f2b2a" stroke="#2bb9a8"/><text x="718" y="444" fill="#bfe9e2">Elastic (partner)</text>
+    <rect x="700" y="454" width="12" height="12" rx="3" fill="#1c1733" stroke="#7b6cf0"/><text x="718" y="464" fill="#cdd8e6">Gemini-3 agents</text>
+    <rect x="700" y="474" width="12" height="12" rx="3" fill="#152436" stroke="#35506e"/><text x="718" y="484" fill="#cdd8e6">Cloud Run service</text>
+    <rect x="700" y="494" width="12" height="12" rx="3" fill="#3a2a14" stroke="#f0b85c"/><text x="718" y="504" fill="#f6c878">human-in-the-loop</text>
+  </g>
+</svg>
