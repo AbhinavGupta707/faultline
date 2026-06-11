@@ -26,12 +26,13 @@ def client():
 
 
 def test_health(client):
+    import os
     resp = client.get("/health")
     assert resp.status_code == 200
     body = resp.json()
     assert body["ok"] is True
     assert body["service"] == "faultline-agent"
-    assert body["mode"] == "mock"
+    assert body["mode"] == os.environ["ELASTIC_MODE"]
     jsonschema.validate(body, {"$ref": "#/$defs/health_response", "$defs": SCHEMA["$defs"]})
 
 
@@ -42,6 +43,38 @@ def test_ws_boot_status(client):
         assert msg["type"] == "status"
         assert msg["run_id"] is None
         assert msg["seq"] == 0
+
+
+def test_events_recent(client):
+    from agents.main import STATE
+    STATE.events_cache = None  # isolate from other tests' cache
+    resp = client.get("/events/recent")
+    assert resp.status_code == 200
+    events = resp.json()
+    assert 0 < len(events) <= 25
+    for e in events:
+        assert set(e) == {"id", "title", "source", "published_at", "place_name",
+                          "lat", "lon", "severity", "url", "relevant"}
+        assert isinstance(e["lat"], (int, float)) and isinstance(e["lon"], (int, float))
+    published = [e["published_at"] for e in events]
+    assert published == sorted(published, reverse=True), "not newest-first"
+    assert not any(e["id"].startswith("evt-whatif") for e in events), "simulated leaked"
+
+    # limit respected (and served from the 30s cache as a prefix slice)
+    short = client.get("/events/recent?limit=2").json()
+    assert len(short) == 2
+    assert short == events[:2]
+    assert STATE.events_cache is not None
+
+    # relevant:true on ids the last run's Watcher flagged (flags are computed
+    # per-request, so they update even when the event list is cached)
+    flagged = events[0]["id"]
+    STATE.last_relevant_ids = {flagged}
+    try:
+        again = client.get("/events/recent").json()
+        assert [e["id"] for e in again if e["relevant"]] == [flagged]
+    finally:
+        STATE.last_relevant_ids = set()
 
 
 def test_unknown_approval_not_applied(client):

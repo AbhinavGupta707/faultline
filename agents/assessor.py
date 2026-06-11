@@ -78,7 +78,10 @@ async def run(ctx: RunContext, paths_payload: ExposurePathsPayload,
     est = est_disruption_days(primary, ctx.scenario)
     exposures: list[Exposure] = []
     seen: set[tuple[str, str]] = set()
-    for path in paths_payload.paths:
+    # when several matched roots reach the same (product, component), the
+    # strongest-match root defines the exposure (its supplier is the chokepoint)
+    ordered_paths = sorted(paths_payload.paths, key=lambda p: p.match.score, reverse=True)
+    for path in ordered_paths:
         key = (path.product_id, path.component_id)
         if key in seen:
             for e in exposures:  # second path into the same exposure

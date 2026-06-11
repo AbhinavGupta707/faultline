@@ -85,8 +85,15 @@ async def _run_golden(approve: bool = True, note: str | None = None):
     approvals = ApprovalRegistry()
     tools = ToolBelt(bus)
     tools.register_local("generate_po_pdf", generate_po_pdf)
+    from agents import config as _config
+    # Mock mode discovers the golden flood organically (the fixture set is the
+    # whole world). Against the LIVE cluster the index also carries Session D's
+    # real-time feed, so the test pins the run to the seeded golden event —
+    # the operator's "investigate this event" flow; the world stays live.
+    focus = GOLDEN_EVENT if _config.elastic_mode() == "live" else None
     ctx = RunContext(run_id="run-2026-06-10-0001", mode="live", bus=bus,
-                     tools=tools, llm=Gemini(), approvals=approvals)
+                     tools=tools, llm=Gemini(), approvals=approvals,
+                     focus_event_id=focus)
 
     async def auto_decider():
         while not approvals.pending_ids():
@@ -94,7 +101,9 @@ async def _run_golden(approve: bool = True, note: str | None = None):
         approvals.resolve(approvals.pending_ids()[0], approve, note)
 
     decider = asyncio.create_task(auto_decider())
-    timeout = 180 if ctx.llm.enabled() else 30  # real Gemini calls need headroom
+    # real Gemini / real Elastic round-trips need headroom over hermetic mock
+    from agents import config as _config
+    timeout = 180 if (ctx.llm.enabled() or _config.elastic_mode() == "live") else 30
     try:
         await asyncio.wait_for(orchestrator.run_pipeline(ctx), timeout=timeout)
     finally:
@@ -158,14 +167,26 @@ def test_ranked_exposures_values(golden_run):
 
 
 def test_decision_log_writes(golden_run):
-    _, _ctx = golden_run
-    decisions = elastic_fake.decisions()
+    """Every decision.logged doc is preceded by its write_decision tool call ok
+    (the actual index write — mock recorder or live decision-log), carries
+    evidence, and validates against $defs/decision. Mode-agnostic by design:
+    the same assertions gate the S1 live run (FAULTLINE_TEST_ELASTIC=live)."""
+    messages, _ctx = golden_run
+    decisions = [m["payload"] for m in messages if m["type"] == "decision.logged"]
     core_kinds = [d["kind"] for d in decisions if d["kind"] not in ("brief", "enrich")]
     assert core_kinds == ["triage", "trace", "assess", "approval", "resource", "negotiate", "verify"]
     for doc in decisions:
         validate_decision(doc)
         assert doc["evidence_event_ids"], f"decision {doc['decision_id']} lacks evidence"
         assert doc["run_id"] == "run-2026-06-10-0001"
+    write_oks = [m["payload"] for m in messages if m["type"] == "tool.call"
+                 and m["payload"]["tool"] == "write_decision" and m["payload"]["status"] == "ok"]
+    assert len(write_oks) >= len(decisions)
+    # in mock mode, additionally confirm the docs landed in the recorder
+    from agents import config
+    if config.elastic_mode() == "mock":
+        recorded = {d["decision_id"] for d in elastic_fake.decisions()}
+        assert {d["decision_id"] for d in decisions} <= recorded
 
 
 def test_tool_calls_paired_and_elastic_flagged(golden_run):
@@ -234,7 +255,7 @@ def test_rejection_path_skips_action_stages():
     assert statuses["verify"] == "skipped"
     assert statuses["approve"] == "done"
 
-    decisions = elastic_fake.decisions()
+    decisions = [m["payload"] for m in messages if m["type"] == "decision.logged"]
     approval = next(d for d in decisions if d["kind"] == "approval")
     assert "rejected" in approval["summary"]
     assert messages[-1]["type"] == "status"

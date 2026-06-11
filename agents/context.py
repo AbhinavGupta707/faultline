@@ -33,6 +33,8 @@ class RunContext:
     state: dict[str, Any] = field(default_factory=dict)
     scenario: Optional[WhatifScenario] = None
     focus_event_id: Optional[str] = None      # what-if: the synthetic event id
+    focus_event: Optional[dict] = None        # the synthetic doc itself — live
+    # search_events hard-excludes simulated docs, so the watcher merges this in
     exclude_event_ids: set = field(default_factory=set)
     _decision_seq: int = 0
 

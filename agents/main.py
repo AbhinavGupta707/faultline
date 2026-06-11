@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timezone
@@ -47,6 +48,9 @@ class AppState:
         self.run_seq = 0
         self.seen_event_ids: set[str] = set()
         self.active_run_id: Optional[str] = None
+        self.active_ctx: Optional[RunContext] = None
+        self.last_relevant_ids: set[str] = set()
+        self.events_cache: Optional[tuple[float, int, list[dict]]] = None  # (mono_ts, limit, docs)
         self.elastic_ok: bool = config.elastic_mode() == "mock"
         self.tasks: list[asyncio.Task] = []
 
@@ -60,15 +64,17 @@ STATE = AppState()
 
 # ── run management ───────────────────────────────────────────────
 async def _execute_run(run_id: str, mode: str, scenario: Optional[WhatifScenario],
-                       focus_event_id: Optional[str]) -> None:
+                       focus_event_id: Optional[str],
+                       focus_event: Optional[dict] = None) -> None:
     async with STATE.run_lock:
         STATE.active_run_id = run_id
         ctx = RunContext(
             run_id=run_id, mode=mode, bus=STATE.bus, tools=STATE.tools,
             llm=STATE.llm, approvals=STATE.approvals, scenario=scenario,
-            focus_event_id=focus_event_id,
+            focus_event_id=focus_event_id, focus_event=focus_event,
             exclude_event_ids=set(STATE.seen_event_ids),
         )
+        STATE.active_ctx = ctx  # /events/recent flags relevant events mid-run
         try:
             await orchestrator.run_pipeline(ctx)
         except Exception as exc:
@@ -79,16 +85,20 @@ async def _execute_run(run_id: str, mode: str, scenario: Optional[WhatifScenario
         finally:
             relevant = ctx.state.get("relevant_events", {}).get("events", [])
             STATE.seen_event_ids.update(e["event_id"] for e in relevant)
+            if relevant:
+                STATE.last_relevant_ids = {e["event_id"] for e in relevant}
             if focus_event_id:
                 STATE.seen_event_ids.add(focus_event_id)
+            STATE.active_ctx = None
             STATE.active_run_id = None
 
 
 def start_run(mode: str, scenario: Optional[WhatifScenario] = None,
-              focus_event_id: Optional[str] = None) -> str:
+              focus_event_id: Optional[str] = None,
+              focus_event: Optional[dict] = None) -> str:
     run_id = STATE.next_run_id()
     task = asyncio.get_running_loop().create_task(
-        _execute_run(run_id, mode, scenario, focus_event_id))
+        _execute_run(run_id, mode, scenario, focus_event_id, focus_event))
     STATE.tasks.append(task)
     STATE.tasks[:] = [t for t in STATE.tasks if not t.done()]
     return run_id
@@ -158,7 +168,8 @@ async def _write_world_event(doc: dict) -> None:
 async def launch_whatif(scenario: WhatifScenario) -> tuple[str, str]:
     event = scenario_to_event(scenario)
     await _write_world_event(event)
-    run_id = start_run("simulated", scenario=scenario, focus_event_id=event["id"])
+    run_id = start_run("simulated", scenario=scenario,
+                       focus_event_id=event["id"], focus_event=event)
     return run_id, event["id"]
 
 
@@ -219,6 +230,86 @@ async def health():
         "elastic_ok": STATE.elastic_ok,
         "version": config.version(),
     }
+
+
+EVENTS_CACHE_TTL_S = 30
+
+
+def _current_relevant_ids() -> set[str]:
+    """Event ids the current run's Watcher flagged (live mid-run), falling back
+    to the last completed run's."""
+    ctx = STATE.active_ctx
+    if ctx is not None:
+        events = (ctx.state.get("relevant_events") or {}).get("events")
+        if events:
+            return {e["event_id"] for e in events}
+    return STATE.last_relevant_ids
+
+
+async def _fetch_recent_events(limit: int) -> list[dict]:
+    """Raw world_event docs, newest first, simulated excluded."""
+    if config.elastic_mode() == "mock":
+        from agents.mocks import elastic_fake
+        docs = elastic_fake.search_events("", include_simulated=False, size=200)["events"]
+    else:
+        import httpx
+        es = config.elasticsearch_url()
+        if not es:
+            raise RuntimeError("ELASTICSEARCH_URL not configured")
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(
+                f"{es}/{config.events_index()}/_search",
+                json={
+                    "size": limit,
+                    "sort": [{"published_at": "desc"}],
+                    "query": {"bool": {"must_not": [{"term": {"simulated": True}}]}},
+                    "_source": ["id", "title", "source", "published_at", "place_name",
+                                "location", "severity_raw", "url"],
+                },
+                headers={"Authorization": f"ApiKey {config.elastic_api_key()}"},
+            )
+            resp.raise_for_status()
+            docs = [h["_source"] for h in resp.json()["hits"]["hits"]]
+    return sorted(docs, key=lambda d: d.get("published_at", ""), reverse=True)[:limit]
+
+
+@app.get("/events/recent")
+async def events_recent(limit: int = 25):
+    """Additive polling endpoint (UI hits ~every 60s): newest live world events,
+    with relevant:true on ids the current/last run's Watcher flagged. The fetch
+    is cached 30s; relevant flags are computed fresh on every request."""
+    limit = max(1, min(100, limit))
+    now = time.monotonic()
+    cache = STATE.events_cache
+    if cache is not None and now - cache[0] < EVENTS_CACHE_TTL_S and limit <= cache[1]:
+        docs = cache[2][:limit]
+    else:
+        try:
+            docs = await _fetch_recent_events(limit)
+            STATE.events_cache = (now, limit, docs)
+        except Exception as exc:
+            log.warning("/events/recent fetch failed: %s", exc)
+            if cache is not None:  # stale beats empty for a polling endpoint
+                docs = cache[2][:limit]
+            else:
+                raise HTTPException(status_code=503,
+                                    detail={"error": f"events fetch failed: {str(exc)[:200]}"})
+    relevant = _current_relevant_ids()
+    return [
+        {
+            "id": d["id"],
+            "title": d["title"],
+            "source": d["source"],
+            "published_at": d["published_at"],
+            "place_name": d.get("place_name", ""),
+            "lat": d["location"]["lat"],
+            "lon": d["location"]["lon"],
+            "severity": d["severity_raw"],
+            "url": d.get("url") or "",
+            "relevant": d["id"] in relevant,
+        }
+        for d in docs
+    ]
 
 
 @app.post("/whatif")
