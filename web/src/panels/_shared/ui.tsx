@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { ExposureStatus, RelevantEvent } from "./store";
 import { hhmm, sourceLabel } from "./format";
 import { prefersReducedMotion } from "./anim";
+import { focusOnMap, isModifiedClick } from "./focus";
 
 export function Panel({
   title,
@@ -46,21 +47,49 @@ export function StatusPill({ status }: { status: ExposureStatus }) {
   );
 }
 
-/** Evidence chip that cites a source world-event: "GDACS · 08:42", linking to the
- *  source URL (decision-log requirement — every conclusion links to live evidence). */
+/** Evidence chip that cites a source world-event: "GDACS · 08:42". Clicking flies
+ *  C1's map to the event location; a modified/middle click opens the source URL.
+ *  (Decision-log requirement — every conclusion links to live evidence.) */
 export function EvidenceChip({ eventId, event }: { eventId: string; event?: RelevantEvent }) {
   const label = event ? `${sourceLabel(event.source)} · ${hhmm(event.published_at)}` : eventId;
-  const title = event ? event.title : eventId;
+  const canFocus = !!event?.location;
+
+  if (canFocus && event) {
+    const title = `${event.title} — click to show on map`;
+    return (
+      <a
+        className="fl-chip fl-chip--focus"
+        href={event.url ?? "#"}
+        target="_blank"
+        rel="noreferrer"
+        title={title}
+        onClick={(e) => {
+          if (isModifiedClick(e)) return; // let the browser open the source
+          e.preventDefault();
+          focusOnMap({
+            lat: event.location.lat,
+            lon: event.location.lon,
+            label: event.place_name || event.title,
+            url: event.url,
+          });
+        }}
+      >
+        <span className="fl-chip__dot" />
+        {label}
+      </a>
+    );
+  }
+
   if (event?.url) {
     return (
-      <a className="fl-chip" href={event.url} target="_blank" rel="noreferrer" title={title}>
+      <a className="fl-chip" href={event.url} target="_blank" rel="noreferrer" title={event.title}>
         <span className="fl-chip__dot" />
         {label}
       </a>
     );
   }
   return (
-    <span className="fl-chip" title={title}>
+    <span className="fl-chip" title={event ? event.title : eventId}>
       <span className="fl-chip__dot" />
       {label}
     </span>

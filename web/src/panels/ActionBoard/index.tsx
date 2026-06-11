@@ -17,6 +17,7 @@ import {
 } from "../_shared/store";
 import { usd, usdCompact, days, pct, humanize } from "../_shared/format";
 import { CountUp } from "../_shared/anim";
+import { focusOnMap, type FocusDetail } from "../_shared/focus";
 
 export default function ActionBoard() {
   const s = useFaultline();
@@ -54,6 +55,7 @@ export default function ActionBoard() {
               po={s.posByExposure[e.exposure_id]}
               verify={s.verifyByExposure[e.exposure_id]}
               pendingApprovalId={pendingApprovalFor(s, e.exposure_id)}
+              focus={focusForExposure(s, e)}
             />
           ))}
         </div>
@@ -77,12 +79,14 @@ function ExposureRow({
   po,
   verify,
   pendingApprovalId,
+  focus,
 }: {
   exp: Exposure;
   alternates?: AlternatesPayload;
   po?: DraftPO;
   verify?: VerifyResult;
   pendingApprovalId?: string;
+  focus?: FocusDetail | null;
 }) {
   const [open, setOpen] = useState(false);
   const expandable = Boolean(alternates || po || verify || exp.rationale);
@@ -92,12 +96,19 @@ function ExposureRow({
       <button
         type="button"
         className="fl-exp__row"
-        onClick={() => expandable && setOpen((o) => !o)}
+        onClick={() => {
+          if (focus) focusOnMap(focus); // fly the map to the disruption
+          if (expandable) setOpen((o) => !o);
+        }}
         aria-expanded={open}
+        title={focus ? "Open details · focus the map on this disruption" : undefined}
       >
         <span className="fl-exp__rank">#{exp.rank}</span>
         <span>
-          <span className="fl-exp__name">{exp.product_name}</span>
+          <span className="fl-exp__name">
+            {exp.product_name}
+            {focus && <span className="fl-exp__locate" aria-hidden>⌖</span>}
+          </span>
           <span className="fl-exp__sub" style={{ display: "block" }}>{humanize(exp.component_id.replace(/^cmp-/, ""))}</span>
         </span>
         <span className="fl-exp__metric">
@@ -304,4 +315,20 @@ function pendingApprovalFor(s: ReturnType<typeof useFaultline>, exposureId: stri
 
 function riskColor(level: string): string {
   return level === "high" ? "var(--risk)" : level === "medium" ? "var(--watch)" : "var(--secured)";
+}
+
+/** Where the map should fly when this exposure's row is clicked: the disruption
+ *  epicenter (root-cause world-event), falling back to the chokepoint supplier. */
+function focusForExposure(s: ReturnType<typeof useFaultline>, e: Exposure): FocusDetail | null {
+  const ev = s.eventsById[e.root_cause_event_id];
+  if (ev?.location) {
+    return { lat: ev.location.lat, lon: ev.location.lon, label: e.product_name, url: ev.url };
+  }
+  const path = s.exposurePaths.find((p) => e.path_ids?.includes(p.path_id));
+  const node =
+    path?.supplier_chain.find((n) => n.supplier_id === e.chokepoint_supplier_id) ?? path?.supplier_chain[0];
+  if (node?.location) {
+    return { lat: node.location.lat, lon: node.location.lon, label: e.product_name };
+  }
+  return null;
 }

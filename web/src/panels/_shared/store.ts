@@ -56,7 +56,7 @@ export interface RelevantEvent {
 }
 
 export interface ExposurePathMatch { score: number; method: string; rationale?: string }
-export interface ChainNode { supplier_id: string; name: string; tier: number; role?: string }
+export interface ChainNode { supplier_id: string; name: string; tier: number; role?: string; location?: GeoPoint; country?: string }
 export interface ExposurePath {
   path_id: string;
   event_id: string;

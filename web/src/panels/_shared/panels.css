@@ -231,6 +231,14 @@
 }
 .fl-chip:hover { background: rgba(45, 212, 191, 0.12); border-color: rgba(45, 212, 191, 0.5); }
 .fl-chip__dot { width: 4px; height: 4px; border-radius: 50%; background: var(--graph-edge); }
+/* map-linked evidence chip: a faint crosshair signals "click to show on map" */
+.fl-chip--focus { cursor: pointer; }
+.fl-chip--focus::after { content: "⌖"; margin-left: 1px; font-size: 10px; opacity: 0.55; }
+.fl-chip--focus:hover::after { opacity: 1; }
+
+/* row locate glyph — appears on hover so the fly-to-map action is discoverable */
+.fl-exp__locate { color: var(--graph-edge); opacity: 0; margin-left: 7px; font-size: 12px; transition: opacity 0.15s ease; }
+.fl-exp__row:hover .fl-exp__locate { opacity: 0.75; }
 
 /* ── mission control: plan ───────────────────────────────────────────────────── */
 .fl-plan { display: flex; flex-direction: column; gap: 2px; }
