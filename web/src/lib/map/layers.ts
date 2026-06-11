@@ -312,6 +312,7 @@ export function buildLayers(
   const ambientLayer = new ScatterplotLayer({
     id: "ambient-events",
     data: ambient,
+    pickable: true,
     getPosition: (d: AmbientBlip) => [d.lon, d.lat],
     getRadius: (d: AmbientBlip) => {
       const hot = relevantIds.has(d.id);

@@ -294,7 +294,22 @@ export default function MapPanel() {
     window.dispatchEvent(new CustomEvent("faultline:focus", { detail: { lon: it.lon, lat: it.lat, label: it.label, url: it.url } }));
 
   const getTooltip = ({ object, layer }: { object?: NetNode; layer?: { id: string } }) => {
-    if (!object || layer?.id !== "nodes") return null;
+    if (!object) return null;
+    // grey ambient blips = real monitored world events — hover shows the headline
+    if (layer?.id === "ambient-events") {
+      const b = object as unknown as { hasHeadline?: boolean; title?: string; source?: string; publishedAt?: string };
+      if (!b.hasHeadline || !b.title) return null;
+      const when = b.publishedAt ? new Date(b.publishedAt).toUTCString().slice(17, 22) + "Z" : "";
+      return {
+        html: `<div style="font-weight:600;margin-bottom:2px">${(b.source ?? "feed").toUpperCase()} · monitored event</div><div style="opacity:.85">${b.title}</div><div style="opacity:.6;margin-top:2px">${when}</div>`,
+        style: {
+          background: "rgba(6,13,23,0.95)", color: "#E6EDF6", border: "1px solid rgba(138,155,179,0.3)",
+          borderRadius: "6px", fontSize: "11px", fontFamily: "'JetBrains Mono', ui-monospace, monospace",
+          padding: "7px 9px", maxWidth: "280px",
+        },
+      };
+    }
+    if (layer?.id !== "nodes") return null;
     const n = object;
     let detail: string;
     if (n.kind === "product") {
@@ -401,7 +416,7 @@ export default function MapPanel() {
                 className="mono"
                 style={{ fontSize: 10.5, color: "var(--graph-edge)", whiteSpace: "nowrap", textDecoration: "none", flexShrink: 0 }}
               >
-                source ↗
+                {pinned.url.includes("api.weather.gov") ? "official alert record ↗" : "source ↗"}
               </a>
             )}
             <button

@@ -77,11 +77,18 @@ export interface AmbientBlip {
   severity: number;
   simulated: boolean;
   hasHeadline: boolean;
+  title?: string;
+  source?: string;
+  publishedAt?: string;
+  url?: string;
 }
 
-/** the blip field = real recent events (headlined, clickable) + anonymous noise dots */
+/** the blip field = real recent events (headlined, hoverable) + anonymous noise dots */
 export function ambientField(events: IntelEvent[]): AmbientBlip[] {
-  const real = events.map((e) => ({ id: e.id, lon: e.lon, lat: e.lat, severity: e.severity, simulated: e.simulated, hasHeadline: true }));
+  const real = events.map((e) => ({
+    id: e.id, lon: e.lon, lat: e.lat, severity: e.severity, simulated: e.simulated,
+    hasHeadline: true, title: e.title, source: e.source, publishedAt: e.publishedAt, url: e.url,
+  }));
   const noise = AMBIENT_NOISE.map((n) => ({ ...n, simulated: false, hasHeadline: false }));
   return [...real, ...noise];
 }

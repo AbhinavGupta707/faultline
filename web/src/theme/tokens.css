@@ -124,7 +124,7 @@ body { overflow: hidden; }
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
-.ticker-track { animation: fl-marquee 48s linear infinite; }
+.ticker-track { animation: fl-marquee 110s linear infinite; }
 .ticker-track:hover { animation-play-state: paused; }
 .ticker-item:hover { color: var(--ink) !important; }
 .ticker-item:focus-visible { outline: 1px solid var(--hairline-strong); border-radius: 4px; }
