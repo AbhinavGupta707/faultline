@@ -70,7 +70,25 @@ export default function App() {
           <ActionBoard />
           <DecisionLog />
           <WhatIf />
-          <AnalyticsPanel apiBase={API_BASE} />
+          {/* Analytics is depth, not run-critical — default-collapsed so the run panels
+              own the rail; a click expands the full live BigQuery history. */}
+          <details className="fl-analytics-fold">
+            <summary
+              style={{
+                cursor: "pointer", listStyle: "none", padding: "9px 12px",
+                fontSize: 11, letterSpacing: "0.08em", textTransform: "uppercase",
+                color: "var(--text-dim, #7c8ba1)", background: "var(--panel, #13202b)",
+                border: "1px solid var(--panel-border, #2c3a4d)", borderRadius: 8,
+                userSelect: "none", display: "flex", alignItems: "center", gap: 8,
+              }}
+            >
+              <span style={{ opacity: 0.7 }}>▸</span>
+              Analytics · 60-day risk history
+            </summary>
+            <div style={{ marginTop: 12 }}>
+              <AnalyticsPanel apiBase={API_BASE} />
+            </div>
+          </details>
         </div>
       </main>
     </div>
